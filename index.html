@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070b18">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>VALLE</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dark.css">
+
+<style>
+.backup-actions .filebtn{
+display:flex;
+align-items:center;
+justify-content:center;
+text-align:center;
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Cabeçalho principal: título do sistema. A badge de prazo fica somente na aba Novo. -->
+  <header class="topbar glass">
+    <div>
+      <h1><img class="app-title-logo" src="icons/dashboard-icon.png" alt="VALLE"> VALLE</h1>
+      <p>Controle de clientes, vales e recebimentos</p>
+    </div>
+  </header>
+
+  <!-- Menu de navegação: troca entre Dashboard, Novo, Clientes, Histórico, Relatórios e Configuração. -->
+  <nav class="tabs glass">
+    <button class="tab active" data-screen="dashboard">🏠<span>Dashboard</span></button>
+    <button class="tab notification-tab" data-screen="notificacoes">🔔<span>Notificações</span><em id="notifCount" class="notif-count">0</em></button>
+    <button class="tab" data-screen="emprestimo">💰<span>Novo</span></button>
+    <button class="tab" data-screen="clientes">👤<span>Clientes</span></button>
+    <button class="tab" data-screen="historico">📜<span>Histórico</span></button>
+    <button class="tab" data-screen="relatorios">📊<span>Relatórios</span></button>
+    <button class="tab" data-screen="calendario">📅<span>Calendário</span></button>
+  </nav>
+
+  <main>
+    <!-- Aba Dashboard: painel premium responsivo para desktop e celular. -->
+    <section id="dashboard" class="screen active dashboard-pro dashboard-premium">
+      <div class="premium-mobile-top">
+        <div class="premium-mobile-brand">
+          <img class="dashboard-title-logo" src="icons/dashboard-icon.png" alt="VALLE">
+          <div class="premium-mobile-brand-text"><h2>DASHBOARD</h2><p>Visão geral do sistema</p></div>
+        </div>
+        <div class="premium-top-actions"><span class="bell-dot">🔔<em id="dashNotifMini">0</em></span><button type="button" class="premium-user-dot dashboard-user-trigger" id="dashboardUserMobile" aria-label="Abrir menu do usuário" aria-expanded="false">👤</button></div>
+      </div>
+
+      <div class="premium-desktop-head">
+        <div class="premium-search">🔎 <input id="dashboardBusca" type="search" placeholder="Buscar cliente, vale ou telefone..." oninput="renderPremiumDashboard()"></div>
+        <div class="premium-head-right"><span>📅 <b id="dashDataHoje">--/--/----</b></span><span class="bell-dot">🔔<em id="dashNotifMini2">0</em></span><div class="dashboard-user-menu"><button type="button" class="dashboard-user-trigger" id="dashboardUserTrigger" aria-expanded="false"><span>👤</span><strong id="dashboardUserName">Usuário</strong><span class="dashboard-user-chevron">▾</span></button></div></div>
+      </div>
+      <div class="dashboard-user-dropdown hidden" id="dashboardUserDropdown"><div class="dashboard-user-info"><strong id="dashboardUserDropdownName">Usuário</strong><small id="dashboardUserDropdownEmail"></small></div><button type="button" id="dashboardThemeBtn" class="user-theme-menu-btn">Modo escuro</button><button type="button" id="dashboardLogoutBtn">Sair</button></div>
+
+      <div class="premium-kpis dashboard-money-kpis">
+        <article class="premium-kpi green"><div class="kpi-icon">💵</div><small>VALOR EM CAIXA</small><strong id="dashCaixa">R$ 0,00</strong><p>Disponível para novos vales</p><em>↗ SALDO DISPONÍVEL</em></article>
+        <article class="premium-kpi blue"><div class="kpi-icon">🏦</div><small>CAPITAL INVESTIDO</small><strong id="dashInvestido">R$ 0,00</strong><p>Seu capital aplicado</p><em>— SEM VARIAÇÃO</em></article>
+        <article class="premium-kpi orange"><div class="kpi-icon">📈</div><small>VALOR DO VALLE</small><strong id="dashEmprestado">R$ 0,00</strong><p>Total de VALLES em aberto</p><em>↗ EM ABERTO</em></article>
+        <article class="premium-kpi purple"><div class="kpi-icon">💲</div><small>TOTAL A RECEBER</small><strong id="dashReceber">R$ 0,00</strong><p>Principal + juros</p><em>↗ CARTEIRA ATIVA</em></article>
+        <article class="premium-kpi cyan"><div class="kpi-icon">%</div><small>TOTAL DE JUROS</small><strong id="dashTotalJuros">R$ 0,00</strong><p>Juros a receber</p><em>↗ LUCRO PREVISTO</em></article>
+        <article class="premium-kpi gray"><div class="kpi-icon">%</div><small>JUROS CONFIGURÁVEL</small><strong id="dashJurosPercentual">R$ 0,00</strong><p>Sobre total de VALLES em aberto</p><em id="dashPctLabel">0%</em></article>
+        <article class="premium-kpi blue"><div class="kpi-icon">🧾</div><small>TOTAL COM JUROS %</small><strong id="dashTotalJurosPercentual">R$ 0,00</strong><p>VALLES em aberto + juros configurável</p><em>↗ CÁLCULO AUXILIAR</em></article>
+        <article class="premium-kpi green"><div class="kpi-icon">✅</div><small>JUROS RECEBIDOS</small><strong id="dashRecebido">R$ 0,00</strong><p>Somente juros dos vales pagos</p><em>LUCRO RECEBIDO</em></article>
+      </div>
+
+      <div class="premium-grid-main">
+        <section class="premium-panel chart-panel">
+          <div class="premium-panel-head"><h3>EVOLUÇÃO MENSAL</h3><select id="dashPeriodo" onchange="renderPremiumDashboard()"><option value="ano">Este ano</option><option value="6">Últimos 6 meses</option></select></div>
+          <div class="chart-legend"><span><i class="blue-dot"></i>VALLE</span><span><i class="green-dot"></i>Recebido</span></div>
+          <div id="premiumLineChart" class="premium-line-chart"></div>
+        </section>
+        <section class="premium-panel donut-panel">
+          <h3>SITUAÇÃO DOS VALES</h3>
+          <div id="premiumDonut" class="premium-donut-area"></div>
+        </section>
+        <section class="premium-panel mini-calendar-panel">
+          <div class="premium-panel-head"><h3>CALENDÁRIO</h3><button type="button" onclick="switchScreen('calendario')">Ver completo</button></div>
+          <div id="premiumMiniCalendar" class="premium-mini-calendar"></div>
+        </section>
+      </div>
+
+      <div class="premium-grid-bottom">
+        <section class="premium-panel premium-list-panel">
+          <div class="premium-panel-head"><h3>VALES ATRASADOS <span id="dashAtrasadosBadge">0</span></h3><button type="button" onclick="switchScreen('notificacoes')">Ver todos</button></div>
+          <div id="premiumAtrasadosList" class="premium-client-list"></div>
+        </section>
+        <section class="premium-panel premium-list-panel">
+          <div class="premium-panel-head"><h3>PRÓXIMOS A VENCER <span id="dashProximosBadge">0</span></h3><button type="button" onclick="switchScreen('notificacoes')">Ver todos</button></div>
+          <div id="premiumProximosList" class="premium-client-list"></div>
+        </section>
+        <section class="premium-panel premium-summary-panel">
+          <div class="premium-panel-head"><h3>RESUMO FINANCEIRO</h3><select id="dashResumoPeriodo" onchange="renderPremiumDashboard()"><option>Este mês</option></select></div>
+          <div class="premium-summary-list">
+            <div><span>💼 Total em VALLES</span><strong id="dashResumoEmprestado">R$ 0,00</strong></div>
+            <div><span>💵 Total recebido</span><strong id="dashResumoRecebido">R$ 0,00</strong></div>
+            <div><span>📂 Em aberto</span><strong id="dashResumoAberto">R$ 0,00</strong></div>
+            <div><span>✨ Juros recebidos</span><strong id="dashResumoJuros">R$ 0,00</strong></div>
+          </div>
+          <div class="premium-profit"><span>Lucro líquido</span><strong id="dashLucroLiquido">R$ 0,00</strong></div>
+        </section>
+      </div>
+
+      <!-- Elementos auxiliares mantidos para compatibilidade com funções antigas. -->
+      <span id="dashCapitalDisponivel" hidden>R$ 0,00</span>
+      <span id="dashRecebidoHoje" hidden>R$ 0,00</span>
+      <span id="dashRecebidoSemana" hidden>R$ 0,00</span>
+      <span id="dashRecebidoMes" hidden>R$ 0,00</span>
+      <span id="dashAtualizacao" hidden>--/--/----</span>
+      <span id="dashClientes" hidden>0</span>
+      <div id="ultimosVales" hidden></div>
+      <div id="rankingClientes" hidden></div>
+      <div id="historicoFinanceiro" hidden></div>
+    </section>
+
+    <!-- Aba Notificações: mostra cobranças urgentes no estilo conversa/WhatsApp. -->
+    <section id="notificacoes" class="screen notifications-screen">
+      <div class="card notifications-header-card">
+        <div class="section-head"><h2>🔔 Notificações</h2><small>Cobranças atrasadas e próximas do vencimento</small></div>
+        <div id="notificacoesResumo" class="notificacoes-resumo"></div>
+        <div class="notif-filter-controls" aria-label="Filtros de notificações">
+          <button type="button" class="notif-filter-btn active todos" data-notif-filter="todos" onclick="setNotificationFilter('todos')">TODOS</button>
+          <button type="button" class="notif-filter-btn atrasados" data-notif-filter="atrasados" onclick="setNotificationFilter('atrasados')">ATRASADOS</button>
+          <button type="button" class="notif-filter-btn hoje" data-notif-filter="hoje" onclick="setNotificationFilter('hoje')">HOJE</button>
+          <button type="button" class="notif-filter-btn proximos" data-notif-filter="proximos" onclick="setNotificationFilter('proximos')">PRÓXIMOS</button>
+        </div>
+<input class="search" id="notificacoesSearch" type="search" placeholder="🔍 PESQUISAR NAS NOTIFICAÇÕES" oninput="renderNotifications()" autocomplete="off">
+      </div>
+      <div id="notificacoesContainer" class="notifications-list"></div>
+    </section>
+
+    <!-- Aba Novo VALLE: formulário para criar ou editar um vale. -->
+    <section id="emprestimo" class="screen">
+      <div class="card form-card">
+        <div class="section-head"><h2>💰 Novo VALLE</h2><span class="badge"><span id="diasBadge">30</span> DIAS</span></div>
+        <div class="form-grid">
+          <label class="field"><span>👤 Cliente</span><input id="loanCliente" list="clientesLista" placeholder="DIGITE OU ESCOLHA" autocomplete="off"><datalist id="clientesLista"></datalist></label>
+          <label class="field"><span>💵 Valor do VALLE</span><input id="loanValor" inputmode="numeric" placeholder="R$ 0,00"></label>
+          <label class="field"><span>📈 Juros</span><input id="loanJuros" inputmode="decimal" value="30%"></label>
+          <label class="field"><span>✅ Total</span><input id="loanTotal" readonly placeholder="R$ 0,00"></label>
+          <label class="field"><span>📅 Data inicial</span><input id="loanInicio" type="date"></label>
+          <label class="field"><span>📅 Data final</span><input id="loanFinal" type="date"></label>
+          <label class="field full"><span>📝 Observação</span><textarea id="loanObs" placeholder="OBSERVAÇÃO DO VALE"></textarea></label>
+        </div>
+        <div class="actions loan-actions">
+          <button class="btn light" id="cancelLoanBtn" type="button">✖️ Cancelar</button>
+          <button class="btn primary" id="saveOnlyBtn" type="button">💾 Salvar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Aba Clientes: cadastro simples com nome, telefone, CPF e observações. -->
+    <section id="clientes" class="screen">
+      <div class="card form-card">
+        <h2>👤 Cadastro de clientes</h2>
+        <input type="hidden" id="clienteId">
+        <div class="form-grid">
+          <label class="field"><span>👤 Nome</span><input id="cliNome" placeholder="NOME DO CLIENTE"></label>
+          <label class="field"><span>📱 Telefone</span><input id="cliTelefone" inputmode="tel" placeholder="(94) 99999-9999"></label>
+          <label class="field"><span>🪪 CPF</span><input id="cliCpf" inputmode="numeric" placeholder="000.000.000-00"></label>
+          <label class="field full"><span>📝 Observações</span><textarea id="cliObs" placeholder="OBSERVAÇÕES DO CLIENTE"></textarea></label>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="saveClientBtn">SALVAR</button>
+          <button class="btn light" id="clearClientBtn">CANCELAR</button>
+        </div>
+      </div>
+      <div class="card">
+        <input class="search" id="searchClientes" placeholder="🔍 PESQUISAR CLIENTE">
+        <div id="clientesContainer" class="list cards"></div>
+      </div>
+    </section>
+
+    <!-- Aba Histórico: lista todos os vales salvos e permite editar, imprimir, enviar PDF, receber ou excluir. -->
+    <section id="historico" class="screen">
+      <div class="historico-header">
+        <h2><span class="historico-title-icon">◷</span> Histórico</h2>
+      </div>
+      <div class="card historico-card">
+        <div class="historico-filtros">
+          <label class="historico-filtro historico-status">
+            <span>Status</span>
+            <select id="filtroHistoricoStatus">
+              <option value="TODOS">TODOS OS STATUS</option>
+              <option value="ABERTO">ABERTO / A RECEBER</option>
+              <option value="ATRASADO">ATRASADO</option>
+              <option value="PAGO">RECEBIDO / PAGO</option>
+            </select>
+          </label>
+          <label class="historico-filtro historico-data">
+            <span>DATA INICIAL</span>
+            <input id="filtroHistoricoInicio" type="date">
+          </label>
+          <label class="historico-filtro historico-data">
+            <span>DATA FINAL</span>
+            <input id="filtroHistoricoFim" type="date">
+          </label>
+          <button class="btn primary historico-filtrar-btn" id="limparHistoricoFiltrosBtn" type="button">LIMPAR</button>
+        </div>
+        <input class="search" id="searchHistorico" placeholder="🔍 PESQUISAR NO HISTÓRICO">
+        <div id="historicoContainer" class="list cards"></div>
+      </div>
+    </section>
+
+    <!-- Aba Relatórios: visão profissional com ranking, saúde da carteira e histórico por cliente. -->
+    <section id="relatorios" class="screen relatorios-screen">
+      <div class="card relatorios-card">
+        <div class="rel-head">
+          <div>
+            <h2>📊 Relatórios</h2>
+            <p>Resumo financeiro, risco dos clientes e histórico completo por cliente.</p>
+          </div>
+          <input id="relSearchCliente" class="search" placeholder="🔍 PESQUISAR NO RELATÓRIO">
+        </div>
+
+        <div class="rel-kpi-grid">
+          <div class="rel-kpi blue"><small>Cliente que mais pegou</small><strong id="relTopCliente">-</strong><span>Quantidade de vales</span></div>
+          <div class="rel-kpi red"><small>Maior devedor</small><strong id="relMaiorDevedor">-</strong><span>Maior saldo em aberto</span></div>
+          <div class="rel-kpi orange"><small>Total em aberto</small><strong id="relAberto">R$ 0,00</strong><span>Capital + juros em aberto</span></div>
+          <div class="rel-kpi green"><small>Recebido</small><strong id="relRecebido">R$ 0,00</strong><span>Vales pagos + juros recebidos</span></div>
+          <div class="rel-kpi purple"><small>Juros recebidos</small><strong id="relJurosRecebidos">R$ 0,00</strong><span>Lucro já recebido</span></div>
+          <div class="rel-kpi slate"><small>Clientes com risco</small><strong id="relClientesRisco">0</strong><span>Atrasados ou mau histórico</span></div>
+        </div>
+
+        <div class="rel-section-title">
+          <div><h3>Histórico e classificação dos clientes</h3><p>Veja se o cliente é bom pagador, médio ou de risco.</p></div>
+          <div class="rel-legenda"><span class="good">Bom pagador</span><span class="medium">Atenção</span><span class="bad">Risco</span></div>
+        </div>
+        <div id="relDividas" class="rel-client-list"></div>
+      </div>
+    </section>
+
+    <!-- Aba Calendário: visão mensal de vencimentos. -->
+    <section id="calendario" class="screen calendario-screen">
+      <div class="card calendario-card">
+        <div class="section-head"><h2>📅 Calendário de vencimentos</h2><small>Veja quantos vales vencem em cada dia</small></div>
+        <div id="calendarioVencimentos" class="v3-calendar"></div>
+      </div>
+    </section>
+
+    <!-- Configurações da sessão: capital e backup. Juros e atraso são individuais por usuário de serviço. -->
+    <section id="configuracoes" class="screen">
+      <div class="card form-card config-card">
+        <h2>⚙️ Configuração</h2>
+        <div class="form-grid config-grid">
+          <label class="field"><span>🏦 Capital investido</span><input id="configCapitalInvestido" inputmode="numeric" placeholder="R$ 0,00"></label>
+        </div>
+        <div class="actions config-actions">
+          <button class="btn primary" id="saveConfigBtn">SALVAR CONFIGURAÇÃO</button>
+        </div>
+      </div>
+
+      <div class="card form-card backup-card">
+        <h2>📂 Backup</h2>
+        <p class="backup-help">O backup automático é salvo sozinho neste navegador quando você altera clientes, vales ou configurações.</p>
+        <p class="backup-status" id="autoBackupInfo">Último backup automático: verificando...</p>
+        <div class="actions backup-actions">
+          <button class="btn primary" id="backupJsonBtn">📂 Baixar backup JSON</button>
+          <label class="btn light filebtn">📥 Restaurar JSON<input id="restoreInput" type="file" accept="application/json" hidden></label>
+          <button class="btn success" id="restoreAutoBtn">♻️ Restaurar último automático</button>
+          <button class="btn danger" id="wipeBtn">APAGAR TUDO</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="receiveModal" class="receive-modal">
+  <div id="receiveModalBody" class="receive-card"></div>
+</div>
+
+<div id="partialPaymentModal" class="partial-payment-modal">
+  <div id="partialPaymentBody" class="partial-payment-card"></div>
+</div>
+
+<div id="toast" class="toast"></div>
+<!-- JavaScript principal do sistema. Toda a lógica fica em js/app.js. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/app.js?v=20260711-user-theme"></script>
+<script src="js/auth-ui.js?v=20260711-user-theme"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js').catch(()=>{});}</script>
+</body>
+</html>

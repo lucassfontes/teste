@@ -1,0 +1,14 @@
+/*
+ * MODO ESCURO
+ * Ajusta cores quando o body recebe a classe .dark.
+ */
+
+body.dark{--bg:#080716;--card:#111827;--text:#e5e7eb;--muted:#9ca3af;--line:#312e81;--shadow:0 18px 45px rgba(0,0,0,.36);background:radial-gradient(circle at top,#1e1b4b,transparent 38%),linear-gradient(180deg,#020617,#080716)}body.dark .glass{background:rgba(17,24,39,.78)}body.dark input,body.dark textarea,body.dark select{background:#0b1020;color:var(--text);border-color:#4338ca}body.dark .stat,body.dark .btn.light,body.dark .row-btns button,body.dark .badge{background:#1e1b4b;color:#c4b5fd}body.dark .gradient-card{background:linear-gradient(135deg,#6d28d9,#be185d)}
+
+/* Complemento do novo Dashboard VALLE PRO. Mantém o visual escuro mesmo com modo claro/escuro. */
+body.dark .metric-card,body.dark .dash-panel,body.dark .topbar.glass,body.dark .tabs.glass{background:rgba(14,22,40,.88)!important;border-color:rgba(148,163,184,.16)!important;color:#f8fafc!important}
+body.dark .dash-head p,body.dark .panel-title p,body.dark .metric-card p,body.dark .quick-list small,body.dark .donut-legend-pro em{color:#94a3b8!important}
+body.dark .metric-card strong,body.dark .panel-title h3,body.dark .quick-list b,body.dark .donut-legend-pro strong,body.dark .donut-legend-pro span{color:#fff!important}
+
+
+#nome{padding-left:22px;padding-right:22px;box-sizing:border-box;}

@@ -1,0 +1,496 @@
+
+(function(){
+'use strict';
+const PERMS = [
+ ['can_view_dashboard','Dashboard'],['can_create_client','Criar cliente'],['can_edit_client','Editar cliente'],
+ ['can_delete_client','Excluir cliente'],['can_create_vale','Criar VALLE'],['can_edit_vale','Editar VALLE'],
+ ['can_delete_vale','Excluir VALLE'],['can_receive_payment','Receber pagamento'],['can_view_history','Ver histórico'],
+ ['can_view_reports','Ver relatórios'],['can_manage_backup','Backup'],
+ ['can_view_session_data','Ver dados da sessão']
+];
+
+function htmlEscape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function el(id){return document.getElementById(id)}
+function setMsg(msg, error=true){const x=el('authMessage'); if(x){x.textContent=msg||'';x.classList.toggle('error',error)}}
+function whatsappLink(phone){const p=String(phone||'').replace(/\D/g,'');return p?`https://wa.me/${p}`:'#';}
+function roleLabel(role){
+ const map={admin:'Administrador',session:'Usuário de sessão',service:'Usuário de serviço'};
+ return map[String(role||'').toLowerCase()]||'Usuário';
+}
+function ensureRoleBadge(info,role){
+ if(!info)return;
+ let badge=info.querySelector('.user-role-badge');
+ if(!badge){badge=document.createElement('span');badge.className='user-role-badge';info.appendChild(badge)}
+ badge.textContent=roleLabel(role);
+}
+
+function inject(){
+ document.body.insertAdjacentHTML('afterbegin', `
+ <section id="authGate" class="auth-gate">
+  <div class="auth-card">
+   <img src="icons/icon-valle.png" alt="VALLE" class="auth-logo">
+   <button id="authThemeBtn" class="auth-theme-btn" type="button" title="Alternar tema">🌙</button>
+   <h1>VALLE</h1><p>Entre para acessar sua conta</p>
+   <form id="loginForm"><label>E-mail<input id="loginEmail" type="email" required autocomplete="username"></label>
+   <label>Senha<input id="loginPassword" type="password" required autocomplete="current-password"></label>
+   <button class="btn primary" type="submit">Entrar</button></form>
+   <div id="authMessage" class="auth-message"></div>
+   <a id="authWhatsapp" class="auth-whatsapp hidden" target="_blank" rel="noopener">FALAR COM O ADMINISTRADOR</a>
+   <small class="auth-setup ${ValleCloud.configured?'hidden':''}">Configure o Supabase em <b>js/supabase-config.js</b>.</small>
+  </div>
+ </section>
+ <section id="managementPanel" class="management-panel hidden">
+   <header class="management-top"><div><img src="icons/icon-valle.png"><div><h1>VALLE</h1><p id="managementSubtitle"></p></div></div><div class="management-top-actions"><div class="management-user-menu"><button type="button" class="management-user-trigger" id="managementUserTrigger" aria-expanded="false"><span>👤</span><strong id="managementUserName">Usuário</strong><span class="dashboard-user-chevron">▾</span></button><div class="management-user-dropdown hidden" id="managementUserDropdown"><div class="dashboard-user-info"><strong id="managementUserDropdownName">Usuário</strong><small id="managementUserDropdownEmail"></small></div><button type="button" id="managementThemeBtn" class="user-theme-menu-btn">🌙 Modo escuro</button><button type="button" id="logoutBtn" class="user-logout-menu-btn">↪ Sair</button></div></div></div></header>
+   <main class="management-content"><section class="management-card"><div class="management-head"><div><h2 id="managementTitle">Usuários</h2><p id="managementHelp"></p></div><button id="newManagedUserBtn" class="btn primary">NOVO USUÁRIO</button></div><div id="managedUsers"></div></section></main>
+ </section>
+ <div id="userModal" class="user-modal hidden"><div class="user-modal-card"><button class="modal-x" id="closeUserModal">×</button><h2 id="userModalTitle">Novo usuário</h2>
+ <form id="userForm"><input id="managedId" type="hidden"><label>Nome<input id="managedName" required></label><label>E-mail<input id="managedEmail" type="email" required></label>
+ <label id="managedPasswordLabel">Senha inicial<input id="managedPassword" type="password" minlength="6"></label>
+ <label id="managedValidityWrap">Validade da sessão<input id="managedValidity" type="date"></label>
+ <label id="managedWhatsappWrap">WhatsApp do administrador<input id="managedWhatsapp" inputmode="tel" placeholder="Ex: 5594999999999"></label>
+ <label class="check-line" for="managedActive">
+  <input id="managedActive" type="checkbox" checked>
+  <span class="active-check" aria-hidden="true">✓</span>
+  <span class="active-copy"><strong>Usuário ativo</strong><small>Usuário poderá acessar o sistema normalmente.</small></span>
+ </label>
+ <fieldset id="serviceFinancialBox" class="service-financial-box hidden"><legend>Configurações financeiras do usuário</legend>
+  <label>Percentual de juros<input id="managedInterestPercent" inputmode="decimal" placeholder="Ex: 30%" value="30%"></label>
+  <label>Tipo da taxa de atraso<select id="managedLateFeeType"><option value="percentual">PORCENTAGEM</option><option value="reais">VALOR FIXO</option></select></label>
+  <label>Taxa de atraso diário<input id="managedLateFeeValue" inputmode="decimal" placeholder="Ex: 2% ou R$ 5,00" value="0%"></label>
+  <p>Estas configurações são exclusivas deste usuário de serviço.</p>
+ </fieldset>
+ <fieldset id="permissionsBox" class="permissions-box"><legend>Permissões do usuário de serviço</legend>${PERMS.map(([k,n])=>`<label><input type="checkbox" data-perm="${k}" checked> ${n}</label>`).join('')}</fieldset>
+ <div class="modal-actions"><button type="button" id="cancelUserModal" class="btn light">CANCELAR</button><button class="btn primary" type="submit">SALVAR</button></div></form></div></div>`);
+}
+
+
+
+function themeStorageKey(profile){
+ return profile?.id ? `valle_theme_user_${profile.id}` : 'valle_theme_guest';
+}
+function updateThemeButtons(theme){
+ const dark=theme==='dark';
+ const labels=[['dashboardThemeBtn',dark?'Modo claro':'Modo escuro'],['managementThemeBtn',dark?'Modo claro':'Modo escuro']];
+ labels.forEach(([id,text])=>{const b=el(id);if(b)b.textContent=text});
+ const a=el('authThemeBtn');
+ if(a){a.textContent=dark?'☀️':'🌙';a.title=dark?'Mudar para modo claro':'Mudar para modo escuro';}
+}
+function applyUserTheme(theme,profile=null){
+ const value=theme==='dark'?'dark':'light';
+ window.VALLE_ACTIVE_THEME=value;
+ document.body.classList.toggle('dark',value==='dark');
+ try{localStorage.setItem(themeStorageKey(profile),value)}catch(_){}
+ updateThemeButtons(value);
+ if(window.applyTheme) window.applyTheme();
+ return value;
+}
+async function persistUserTheme(theme){
+ const profile=ValleCloud.profile;
+ const value=applyUserTheme(theme,profile);
+ if(profile){
+  try{await ValleCloud.setMyTheme(value)}catch(err){console.error('Não foi possível salvar o tema do usuário:',err)}
+ }
+ return value;
+}
+async function toggleUserTheme(){
+ return persistUserTheme(document.body.classList.contains('dark')?'light':'dark');
+}
+async function activateProfileTheme(profile){
+ let theme=profile?.user_theme;
+ if(theme!=='dark'&&theme!=='light'){
+  try{theme=localStorage.getItem(themeStorageKey(profile))}catch(_){}
+ }
+ return applyUserTheme(theme==='dark'?'dark':'light',profile);
+}
+window.ValleUserTheme={apply:applyUserTheme,toggle:toggleUserTheme,activate:activateProfileTheme};
+
+function setupDashboardUserMenu(profile){
+ const name=String(profile?.name||profile?.email||'Usuário').trim();
+ const email=String(profile?.email||'').trim();
+ const nameEl=el('dashboardUserName');
+ const dropName=el('dashboardUserDropdownName');
+ const dropEmail=el('dashboardUserDropdownEmail');
+ if(nameEl) nameEl.textContent=name;
+ if(dropName) dropName.textContent=name;
+ if(dropEmail) dropEmail.textContent=email;
+ const info=dropName?.closest('.dashboard-user-info');
+ if(info){info.dataset.initial=(name.charAt(0)||'U').toUpperCase();info.querySelector('.user-role-badge')?.remove()}
+ const trigger=el('dashboardUserTrigger');
+ const mobile=el('dashboardUserMobile');
+ const initial=(name.charAt(0)||'U').toUpperCase();
+ if(trigger){const avatar=trigger.querySelector('span:first-child');if(avatar)avatar.textContent=initial}
+ if(mobile)mobile.textContent=initial;
+ const dropdown=el('dashboardUserDropdown');
+ const logout=el('dashboardLogoutBtn');
+ const themeBtn=el('dashboardThemeBtn');
+ const toggle=ev=>{
+   ev?.stopPropagation();
+   if(!dropdown) return;
+   const opening=dropdown.classList.contains('hidden');
+   dropdown.classList.toggle('hidden',!opening);
+   trigger?.setAttribute('aria-expanded',String(opening));
+   mobile?.setAttribute('aria-expanded',String(opening));
+   if(opening){
+     const source=ev?.currentTarget || trigger || mobile;
+     const rect=source?.getBoundingClientRect?.();
+     if(rect){
+       const menuWidth=Math.min(224,window.innerWidth-24);
+       const left=Math.max(12,Math.min(window.innerWidth-menuWidth-12,rect.right-menuWidth));
+       dropdown.style.position='fixed';
+       dropdown.style.left=left+'px';
+       dropdown.style.right='auto';
+       dropdown.style.top=(rect.bottom+8)+'px';
+     }
+   }
+ };
+ if(trigger && !trigger.dataset.bound){trigger.dataset.bound='1';trigger.addEventListener('click',toggle)}
+ if(mobile && !mobile.dataset.bound){mobile.dataset.bound='1';mobile.addEventListener('click',toggle)}
+ if(themeBtn && !themeBtn.dataset.bound){themeBtn.dataset.bound='1';themeBtn.addEventListener('click',async ev=>{ev.stopPropagation();await toggleUserTheme()})}
+ if(logout && !logout.dataset.bound){logout.dataset.bound='1';logout.addEventListener('click',async()=>{await ValleCloud.signOut();location.reload()})}
+ updateThemeButtons(window.VALLE_ACTIVE_THEME||'light');
+ if(!document.documentElement.dataset.userMenuBound){
+   document.documentElement.dataset.userMenuBound='1';
+   document.addEventListener('click',ev=>{
+     if(dropdown && !dropdown.classList.contains('hidden') && !ev.target.closest('.dashboard-user-menu') && !ev.target.closest('#dashboardUserMobile')){
+       dropdown.classList.add('hidden');
+       trigger?.setAttribute('aria-expanded','false');
+       mobile?.setAttribute('aria-expanded','false');
+     }
+   });
+ }
+}
+
+
+
+function setupManagementUserMenu(profile){
+ const name=String(profile?.name||profile?.email||'Usuário').trim();
+ const email=String(profile?.email||'').trim();
+ ['managementUserName','managementUserDropdownName'].forEach(id=>{const x=el(id);if(x)x.textContent=name});
+ const emailEl=el('managementUserDropdownEmail');if(emailEl)emailEl.textContent=email;
+ const info=el('managementUserDropdownName')?.closest('.dashboard-user-info');
+ if(info){info.dataset.initial=(name.charAt(0)||'U').toUpperCase();info.querySelector('.user-role-badge')?.remove()}
+ const trigger=el('managementUserTrigger');
+ const initial=(name.charAt(0)||'U').toUpperCase();
+ if(trigger){const avatar=trigger.querySelector('span:first-child');if(avatar)avatar.textContent=initial}
+ const dropdown=el('managementUserDropdown');
+ const themeBtn=el('managementThemeBtn');
+ const logout=el('logoutBtn');
+ const toggle=ev=>{ev?.stopPropagation();if(!dropdown)return;const opening=dropdown.classList.contains('hidden');dropdown.classList.toggle('hidden',!opening);trigger?.setAttribute('aria-expanded',String(opening));if(opening){const rect=trigger?.getBoundingClientRect?.();if(rect){const menuWidth=Math.min(224,window.innerWidth-24);const left=Math.max(12,Math.min(window.innerWidth-menuWidth-12,rect.right-menuWidth));dropdown.style.position='fixed';dropdown.style.left=left+'px';dropdown.style.right='auto';dropdown.style.top=(rect.bottom+8)+'px';}}};
+ if(trigger&&!trigger.dataset.bound){trigger.dataset.bound='1';trigger.addEventListener('click',toggle)}
+ if(themeBtn&&!themeBtn.dataset.bound){themeBtn.dataset.bound='1';themeBtn.addEventListener('click',async ev=>{ev.stopPropagation();await toggleUserTheme()})}
+ if(logout&&!logout.dataset.bound){logout.dataset.bound='1';logout.addEventListener('click',async()=>{await ValleCloud.signOut();location.reload()})}
+ updateThemeButtons(window.VALLE_ACTIVE_THEME||'light');
+ if(!document.documentElement.dataset.managementMenuBound){
+  document.documentElement.dataset.managementMenuBound='1';
+  document.addEventListener('click',ev=>{if(dropdown&&!dropdown.classList.contains('hidden')&&!ev.target.closest('.management-user-menu')){dropdown.classList.add('hidden');trigger?.setAttribute('aria-expanded','false')}});
+ }
+}
+
+function mountSessionSettings(){
+ const section=el('configuracoes');
+ const content=document.querySelector('.management-content');
+ if(!section||!content)return;
+ section.classList.add('session-settings-panel','active');
+ section.style.display='block';
+ content.appendChild(section);
+ const title=section.querySelector('.config-card h2');
+ if(title) title.textContent='⚙️ Configurações da sessão';
+ const help=section.querySelector('.backup-help');
+ if(help) help.textContent='As configurações e backups desta sessão são compartilhados com todos os usuários de serviço vinculados.';
+}
+function hideServiceSettingsTab(){
+ const tab=document.querySelector('.tab[data-screen="configuracoes"]');
+ if(tab) tab.style.display='none';
+}
+async function loadSharedWorkspaceForSession(profile){
+ installSaveHook();
+ const snapshot=await ValleCloud.loadWorkspaceSnapshot();
+ let current=snapshot?.data||null;
+ if(current&&window.normalizeDb){
+   current=window.replaceValleDatabase?window.replaceValleDatabase(current):normalizeDb(current);
+ }else{
+   const theme=document.body.classList.contains('dark')?'dark':'light';
+   current={settings:{theme,seq:1,capitalInvestido:0,percentualJuros50:50,taxaAtrasoDiario:0,tipoTaxaAtrasoDiario:'percentual'},clientes:[],vales:[]};
+   if(window.replaceValleDatabase)current=window.replaceValleDatabase(current);
+   await ValleCloud.saveWorkspace(current);
+ }
+ window.db=current;
+ try{localStorage.setItem('emprestimos_pro_v2',JSON.stringify(current));localStorage.setItem('valle_db_owner_session',profile.id)}catch(_){}
+ if(window.renderAll)renderAll();
+ mountSessionSettings();
+}
+function applyServiceFinancialSettings(settings){
+ const p=settings||{};
+ window.VALLE_SERVICE_FINANCIAL_SETTINGS={
+  interest_percent:Number(p.interest_percent??30),
+  late_fee_type:p.late_fee_type==='reais'?'reais':'percentual',
+  late_fee_value:Number(p.late_fee_value||0)
+ };
+ const current=window.getValleDatabase?window.getValleDatabase():window.db;
+ if(current?.settings){
+  current.settings.percentualJuros50=window.VALLE_SERVICE_FINANCIAL_SETTINGS.interest_percent;
+  current.settings.tipoTaxaAtrasoDiario=window.VALLE_SERVICE_FINANCIAL_SETTINGS.late_fee_type;
+  current.settings.taxaAtrasoDiario=window.VALLE_SERVICE_FINANCIAL_SETTINGS.late_fee_value;
+ }
+}
+
+async function showRole(profile){
+ const app=document.querySelector('.app'); const gate=el('authGate'); const panel=el('managementPanel');
+ gate.classList.add('hidden');
+ await activateProfileTheme(profile);
+ if(profile.role==='service'){
+   hideServiceSettingsTab();
+   panel.classList.add('hidden'); app.classList.remove('hidden');
+   setupDashboardUserMenu(profile);
+   installSaveHook();
+   const snapshot=await ValleCloud.loadWorkspaceSnapshot();
+   const remote=snapshot?.data||null;
+   if(remote && window.normalizeDb){
+     const loaded = window.replaceValleDatabase ? window.replaceValleDatabase(remote) : normalizeDb(remote);
+     window.db = loaded;
+     lastAppliedWorkspaceAt=snapshot.updated_at||null;
+     try{
+       localStorage.setItem('emprestimos_pro_v2',JSON.stringify(loaded));
+       localStorage.setItem('valle_db_owner_session',profile.session_user_id||'');
+     }catch(_){}
+   } else {
+     // Sessão nova: nunca reaproveita dados locais pertencentes a outra sessão.
+     let owner='';
+     try{owner=localStorage.getItem('valle_db_owner_session')||''}catch(_){}
+     let current;
+     if(owner && owner===profile.session_user_id){
+       current=window.getValleDatabase ? window.getValleDatabase() : window.db;
+     }else{
+       const theme=document.body.classList.contains('dark')?'dark':'light';
+       current={settings:{theme,seq:1,capitalInvestido:0,percentualJuros50:50,taxaAtrasoDiario:0,tipoTaxaAtrasoDiario:'percentual'},clientes:[],vales:[]};
+       if(window.replaceValleDatabase) current=window.replaceValleDatabase(current);
+       window.db=current;
+       try{
+         localStorage.setItem('emprestimos_pro_v2',JSON.stringify(current));
+         localStorage.setItem('valle_db_owner_session',profile.session_user_id||'');
+       }catch(_){}
+     }
+     await ValleCloud.saveWorkspace(current);
+     lastAppliedWorkspaceAt=ValleCloud.lastSyncedAt||null;
+   }
+   const perms=await ValleCloud.loadMyPermissions();
+   applyServiceFinancialSettings(perms);
+   applyPermissions(perms);
+   if(window.renderAll) renderAll();
+   installContinuousCloudSync();
+ } else {
+   app.classList.add('hidden'); panel.classList.remove('hidden');
+   setupManagementUserMenu(profile);
+   el('managementSubtitle').textContent=profile.role==='admin'?'Painel do administrador':'Painel do usuário de sessão';
+   el('managementTitle').textContent=profile.role==='admin'?'Usuários de sessão':'Usuários de serviço';
+   el('managementHelp').textContent=profile.role==='admin'?'Crie usuários de sessão, defina a validade e ative ou bloqueie o acesso.':'Crie usuários de serviço, defina permissões e ative ou bloqueie o acesso.';
+   el('newManagedUserBtn').textContent=profile.role==='admin'?'NOVO USUÁRIO DE SESSÃO':'NOVO USUÁRIO DE SERVIÇO';
+   await renderUsers();
+   if(profile.role==='session') await loadSharedWorkspaceForSession(profile);
+ }
+}
+
+let saveHooked=false;
+let continuousSyncInstalled=false;
+let lastAppliedWorkspaceAt=null;
+function currentValleDatabase(){
+ return window.getValleDatabase ? window.getValleDatabase() : window.db;
+}
+function installSaveHook(){
+ if(saveHooked || typeof window.save!=='function') return;
+ const original=window.save;
+ window.save=function(){
+   const r=original.apply(this,arguments);
+   try{ValleCloud.queueWorkspace(currentValleDatabase())}catch(_){}
+   return r;
+ };
+ saveHooked=true;
+}
+function installContinuousCloudSync(){
+ if(continuousSyncInstalled) return;
+ continuousSyncInstalled=true;
+ window.addEventListener('valle-cloud-sync',ev=>{
+   if(ev.detail?.state==='synced'&&ev.detail?.lastSyncedAt)lastAppliedWorkspaceAt=ev.detail.lastSyncedAt;
+ });
+ // Atualiza periodicamente a tela com mudanças feitas por outro usuário de
+ // serviço da mesma sessão. Não envia o banco às cegas, evitando sobrescrever
+ // alterações mais novas de outro dispositivo.
+ setInterval(async()=>{
+   if(ValleCloud.profile?.role!=='service')return;
+   try{
+     const snapshot=await ValleCloud.loadWorkspaceSnapshot();
+     if(!snapshot?.data||!snapshot.updated_at)return;
+     if(lastAppliedWorkspaceAt && snapshot.updated_at<=lastAppliedWorkspaceAt)return;
+     lastAppliedWorkspaceAt=snapshot.updated_at;
+     if(snapshot.updated_by===ValleCloud.profile.id)return;
+     const loaded=window.replaceValleDatabase?window.replaceValleDatabase(snapshot.data):snapshot.data;
+     window.db=loaded;
+     applyServiceFinancialSettings(await ValleCloud.loadMyPermissions());
+     try{
+       localStorage.setItem('emprestimos_pro_v2',JSON.stringify(loaded));
+       localStorage.setItem('valle_db_owner_session',ValleCloud.profile.session_user_id||'');
+     }catch(_){}
+     if(window.renderAll)renderAll();
+   }catch(e){console.warn('Não foi possível atualizar os dados compartilhados da sessão:',e)}
+ },10000);
+ document.addEventListener('visibilitychange',()=>{
+   if(document.visibilityState==='hidden' && ValleCloud.profile?.role==='service'){
+     ValleCloud.flushWorkspace(currentValleDatabase());
+   }
+ });
+ window.addEventListener('pagehide',()=>{
+   if(ValleCloud.profile?.role==='service') ValleCloud.flushWorkspace(currentValleDatabase());
+ });
+}
+
+function applyPermissions(p){
+ const map={
+  can_view_dashboard:'dashboard',can_create_vale:'emprestimo',can_create_client:'clientes',can_view_history:'historico',can_view_reports:'relatorios'
+ };
+ Object.entries(map).forEach(([key,screen])=>{if(p[key]===false){document.querySelectorAll(`[data-screen="${screen}"]`).forEach(x=>x.classList.add('permission-hidden'));document.getElementById(screen)?.classList.add('permission-hidden')}});
+ window.VALLE_PERMISSIONS=p;
+}
+
+async function renderUsers(){
+ const box=el('managedUsers'); box.innerHTML='<p>Carregando...</p>';
+ try{
+  const users=await ValleCloud.listManagedUsers();
+  if(!users.length){box.innerHTML='<div class="empty-users">Nenhum usuário cadastrado.</div>';return;}
+  box.innerHTML=users.map(u=>userCard(u,[])).join('');
+  box.querySelectorAll('[data-edit-user]').forEach(b=>b.onclick=()=>openEdit(b.dataset.editUser,users));
+  box.querySelectorAll('[data-toggle-user]').forEach(b=>b.onclick=()=>toggleUser(b.dataset.toggleUser,b.dataset.active!=='true'));
+  box.querySelectorAll('[data-delete-user]').forEach(b=>b.onclick=()=>deleteManagedUser(b.dataset.deleteUser,users));
+ }catch(e){box.innerHTML=`<div class="auth-message error">${htmlEscape(e.message)}</div>`}
+}
+function userCard(u,children){
+ const expired=u.role==='session'&&u.valid_until&&u.valid_until<new Date().toISOString().slice(0,10);
+ return `<article class="user-card ${!u.active||expired?'blocked':''}"><div class="user-main"><div class="user-avatar">${htmlEscape((u.name||'?')[0])}</div><div><h3>${htmlEscape(u.name)}</h3><p>${htmlEscape(u.email||'')} · ${u.role==='session'?'SESSÃO':'SERVIÇO'}</p>${u.role==='session'?`<small>Validade: ${u.valid_until?new Date(u.valid_until+'T00:00:00').toLocaleDateString('pt-BR'):'sem validade'} ${expired?'· VENCIDA':''}</small>`:''}</div></div><div class="user-actions"><span class="status-pill ${u.active&&!expired?'on':'off'}">${u.active&&!expired?'ATIVO':'BLOQUEADO'}</span><button class="btn light" data-edit-user="${u.id}">EDITAR</button><button class="btn ${u.active?'danger':'success'}" data-toggle-user="${u.id}" data-active="${u.active}">${u.active?'BLOQUEAR':'ATIVAR'}</button><button class="btn delete-user-btn" data-delete-user="${u.id}" title="Excluir usuário">🗑️ EXCLUIR</button></div>${children.length?`<div class="hierarchy-children"><b>Usuários de serviço</b>${children.map(c=>`<div><span>${htmlEscape(c.name)} <small>${htmlEscape(c.email||'')}</small></span><em class="${c.active?'on':'off'}">${c.active?'ATIVO':'BLOQUEADO'}</em></div>`).join('')}</div>`:''}</article>`;
+}
+
+function configureManagedForm(role, editing=false){
+ const isAdmin=ValleCloud.profile.role==='admin';
+ const isSession=ValleCloud.profile.role==='session';
+ const validity=el('managedValidityWrap');
+ const whatsapp=el('managedWhatsappWrap');
+ const perms=el('permissionsBox');
+ const financial=el('serviceFinancialBox');
+ // Validade e WhatsApp pertencem somente ao usuário de sessão criado pelo ADM.
+ validity.classList.toggle('hidden',!isAdmin);
+ whatsapp.classList.toggle('hidden',!isAdmin);
+ validity.style.display=isAdmin?'':'none';
+ whatsapp.style.display=isAdmin?'':'none';
+ perms.classList.toggle('hidden',!isSession);
+ perms.style.display=isSession?'':'none';
+ financial?.classList.toggle('hidden',!isSession);
+ if(financial) financial.style.display=isSession?'':'none';
+ if(!isAdmin){el('managedValidity').value='';el('managedWhatsapp').value='';}
+ // O ADM, ao editar, administra apenas validade/status. Dados de identidade ficam protegidos.
+ el('managedName').disabled=isAdmin&&editing;
+ el('managedEmail').disabled=editing;
+ el('managedPasswordLabel').classList.toggle('hidden',editing);
+}
+function openNew(){
+ el('userForm').reset(); el('managedId').value=''; el('managedActive').checked=true;
+ if(el('managedInterestPercent'))el('managedInterestPercent').value='30%';
+ if(el('managedLateFeeType'))el('managedLateFeeType').value='percentual';
+ if(el('managedLateFeeValue'))el('managedLateFeeValue').value='0%';
+ const admin=ValleCloud.profile.role==='admin';
+ el('userModalTitle').textContent=admin?'Novo usuário de sessão':'Novo usuário de serviço';
+ document.querySelector('#userForm .btn.primary').textContent='Salvar';
+ configureManagedForm(admin?'session':'service',false);
+ el('userModal').classList.remove('hidden');
+}
+async function openEdit(id,users){
+ const u=users.find(x=>x.id===id); if(!u)return;
+ const callerRole=ValleCloud.profile.role;
+ if((callerRole==='admin'&&u.role!=='session')||(callerRole==='session'&&u.role!=='service')){
+  alert('Você não tem permissão para administrar este tipo de usuário.'); return;
+ }
+ el('managedId').value=u.id;el('managedName').value=u.name||'';el('managedEmail').value=u.email||'';el('managedPassword').value='';el('managedValidity').value=u.valid_until||'';el('managedWhatsapp').value=u.admin_whatsapp||'';el('managedActive').checked=!!u.active;
+ el('userModalTitle').textContent=callerRole==='admin'?'Administrar usuário de sessão':'Administrar usuário de serviço';
+ document.querySelector('#userForm .btn.primary').textContent='Atualizar';
+ configureManagedForm(u.role,true);
+ if(u.role==='service'){
+  const p=await ValleCloud.getPermissions(u.id);
+  document.querySelectorAll('[data-perm]').forEach(x=>x.checked=p[x.dataset.perm]!==false);
+  if(el('managedInterestPercent'))el('managedInterestPercent').value=String(Number(p.interest_percent??30)).replace('.',',')+'%';
+  if(el('managedLateFeeType'))el('managedLateFeeType').value=p.late_fee_type==='reais'?'reais':'percentual';
+  if(el('managedLateFeeValue'))el('managedLateFeeValue').value=(p.late_fee_type==='reais'?money(Number(p.late_fee_value||0)):String(Number(p.late_fee_value||0)).replace('.',',')+'%');
+ }
+ el('userModal').classList.remove('hidden');
+}
+function closeModal(){
+ el('userModal').classList.add('hidden');
+ el('managedName').disabled=false;el('managedEmail').disabled=false;el('managedPasswordLabel').classList.remove('hidden');
+}
+async function toggleUser(id,active){try{await ValleCloud.invokeManage('update',{userId:id,active});await renderUsers()}catch(e){alert(e.message)}}
+
+async function deleteManagedUser(id,users){
+ const user=users.find(x=>x.id===id); if(!user)return;
+ const isSession=user.role==='session';
+ const message=isSession
+  ? `Excluir permanentemente o usuário de sessão "${user.name}"? Todos os usuários de serviço, permissões e dados vinculados a essa sessão também serão apagados. Esta ação não pode ser desfeita.`
+  : `Excluir permanentemente o usuário de serviço "${user.name}"? As permissões e os dados vinculados a ele também serão apagados. Esta ação não pode ser desfeita.`;
+ const ok=window.appConfirm
+  ? await appConfirm(message,{title:isSession?'Excluir sessão e hierarquia?':'Excluir usuário de serviço?',icon:'🗑️',confirmText:'Excluir',cancelText:'Cancelar'})
+  : confirm(message);
+ if(!ok)return;
+ try{
+  await ValleCloud.invokeManage('delete',{userId:id});
+  await renderUsers();
+ }catch(e){alert(e.message)}
+}
+
+async function saveManaged(e){
+ e.preventDefault();
+ const id=el('managedId').value;
+ const callerRole=ValleCloud.profile.role;
+ const role=callerRole==='admin'?'session':'service';
+ const payload={
+  userId:id||undefined,
+  role,
+  active:el('managedActive').checked
+ };
+ if(!id){
+  payload.name=el('managedName').value.trim();
+  payload.email=el('managedEmail').value.trim();
+  payload.password=el('managedPassword').value;
+ }
+ if(callerRole==='admin'){
+  payload.validUntil=el('managedValidity').value||null;
+  payload.adminWhatsapp=el('managedWhatsapp').value.trim()||null;
+ } else {
+  // Usuário de sessão pode manter o nome do usuário de serviço atualizado.
+  payload.name=el('managedName').value.trim();
+ }
+ try{
+  const result=await ValleCloud.invokeManage(id?'update':'create',payload); const uid=id||result.userId;
+  if(callerRole==='session'){
+   const perms={};document.querySelectorAll('[data-perm]').forEach(x=>perms[x.dataset.perm]=x.checked);
+   perms.interest_percent=taxaNum(el('managedInterestPercent')?.value||'30');
+   perms.late_fee_type=el('managedLateFeeType')?.value==='reais'?'reais':'percentual';
+   perms.late_fee_value=perms.late_fee_type==='reais'?moneyNum(el('managedLateFeeValue')?.value||'0'):taxaNum(el('managedLateFeeValue')?.value||'0');
+   await ValleCloud.savePermissions(uid,perms);
+  }
+  closeModal(); await renderUsers();
+ }catch(err){alert(err.message)}
+}
+function setupManagementTheme(){
+ let theme='light';
+ try{theme=localStorage.getItem('valle_theme_guest')||'light'}catch(_){}
+ applyUserTheme(theme,null);
+ const a=el('authThemeBtn');
+ if(a&&!a.dataset.bound){a.dataset.bound='1';a.onclick=()=>{
+  const next=document.body.classList.contains('dark')?'light':'dark';
+  applyUserTheme(next,null);
+ }}
+}
+
+async function boot(){
+ inject(); setupManagementTheme(); document.querySelector('.app').classList.add('hidden');
+ el('loginForm').onsubmit=async e=>{e.preventDefault();setMsg('Entrando...',false);el('authWhatsapp').classList.add('hidden');try{const p=await ValleCloud.signIn(el('loginEmail').value,el('loginPassword').value);setMsg('');await showRole(p)}catch(err){setMsg(err.message);if(err.whatsapp){const a=el('authWhatsapp');a.href=whatsappLink(err.whatsapp);a.classList.remove('hidden')}}};
+ el('logoutBtn').onclick=async()=>{await ValleCloud.signOut();location.reload()};el('newManagedUserBtn').onclick=openNew;el('closeUserModal').onclick=closeModal;el('cancelUserModal').onclick=closeModal;el('userForm').onsubmit=saveManaged;
+ try{const p=await ValleCloud.restoreSession();if(p?.blocked){setMsg(p.reason);if(p.whatsapp){const a=el('authWhatsapp');a.href=whatsappLink(p.whatsapp);a.classList.remove('hidden')}}else if(p)await showRole(p)}catch(e){setMsg(e.message)}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();

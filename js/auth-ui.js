@@ -44,7 +44,7 @@ function inject(){
   </div>
  </section>
  <section id="managementPanel" class="management-panel hidden">
-   <header class="management-top"><div><img src="icons/icon-valle.png"><div><h1>VALLE</h1><p id="managementSubtitle"></p></div></div><div class="management-top-actions"><div class="management-user-menu"><button type="button" class="management-user-trigger" id="managementUserTrigger" aria-expanded="false"><span>👤</span><strong id="managementUserName">Usuário</strong><span class="dashboard-user-chevron">▾</span></button><div class="management-user-dropdown hidden" id="managementUserDropdown"><div class="dashboard-user-info"><strong id="managementUserDropdownName">Usuário</strong><small id="managementUserDropdownEmail"></small></div><button type="button" id="managementThemeBtn" class="user-theme-menu-btn">🌙 Modo escuro</button><button type="button" id="logoutBtn" class="user-logout-menu-btn">↪ Sair</button></div></div></div></header>
+   <header class="management-top"><div><img src="icons/icon-valle.png"><div><h1>VALLE</h1><p id="managementSubtitle"></p></div></div><div class="management-top-actions"><div class="management-user-menu"><button type="button" class="management-user-trigger" id="managementUserTrigger" aria-expanded="false"><span class="management-trigger-avatar">U</span><span class="management-trigger-copy"><strong id="managementUserName">Usuário</strong><small id="managementUserPanelLabel">Painel</small></span><span class="dashboard-user-chevron" aria-hidden="true">⌄</span></button><div class="management-user-dropdown hidden" id="managementUserDropdown"><div class="dashboard-user-info"><strong id="managementUserDropdownName">Usuário</strong><small id="managementUserDropdownEmail"></small></div><button type="button" id="managementThemeBtn" class="user-theme-menu-btn">🌙 Modo escuro</button><button type="button" id="logoutBtn" class="user-logout-menu-btn">↪ Sair</button></div></div></div></header>
    <main class="management-content"><section class="management-card"><div class="management-head"><div><h2 id="managementTitle">Usuários</h2><p id="managementHelp"></p></div><button id="newManagedUserBtn" class="btn primary">NOVO USUÁRIO</button></div><div id="managedUsers"></div></section></main>
  </section>
  <div id="userModal" class="user-modal hidden"><div class="user-modal-card"><button class="modal-x" id="closeUserModal">×</button><h2 id="userModalTitle">Novo usuário</h2>
@@ -122,7 +122,7 @@ function setupDashboardUserMenu(profile){
  const trigger=el('dashboardUserTrigger');
  const mobile=el('dashboardUserMobile');
  const initial=(name.charAt(0)||'U').toUpperCase();
- if(trigger){const avatar=trigger.querySelector('span:first-child');if(avatar)avatar.textContent=initial}
+ if(trigger){const avatar=trigger.querySelector('.management-trigger-avatar');if(avatar)avatar.textContent=initial}
  if(mobile)mobile.textContent=initial;
  const dropdown=el('dashboardUserDropdown');
  const logout=el('dashboardLogoutBtn');
@@ -171,6 +171,8 @@ function setupManagementUserMenu(profile){
  const email=String(profile?.email||'').trim();
  ['managementUserName','managementUserDropdownName'].forEach(id=>{const x=el(id);if(x)x.textContent=name});
  const emailEl=el('managementUserDropdownEmail');if(emailEl)emailEl.textContent=email;
+ const panelLabel=el('managementUserPanelLabel');
+ if(panelLabel)panelLabel.textContent=profile?.role==='admin'?'Painel administrativo':'Painel de sessão';
  const info=el('managementUserDropdownName')?.closest('.dashboard-user-info');
  if(info){info.dataset.initial=(name.charAt(0)||'U').toUpperCase();info.querySelector('.user-role-badge')?.remove()}
  const trigger=el('managementUserTrigger');

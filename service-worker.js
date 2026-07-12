@@ -1,9 +1,9 @@
 /** VALLE PWA — funcionamento offline + sincronização ao reconectar */
-const CACHE = 'valle-v35-offline-sync-20260712-v2';
+const CACHE = 'valle-v35-management-menu-20260712-v1';
 const APP_SHELL = [
   './','./index.html','./manifest.json','./favicon.ico',
-  './css/style.css?v=20260711-4','./css/dark.css','./css/print.css',
-  './js/app.js?v=20260711-user-theme','./js/auth-ui.js?v=20260712-offline2',
+  './css/style.css?v=20260712-management-menu','./css/dark.css','./css/print.css',
+  './js/app.js?v=20260711-user-theme','./js/auth-ui.js?v=20260712-management-menu',
   './js/supabase-config.js','./js/supabase-client.js?v=20260712-offline2',
   './js/pdf.js','./js/whatsapp.js','./js/clientes.js','./js/historico.js',
   './js/dashboard.js','./js/backup.js','./js/storage.js','./js/util.js',

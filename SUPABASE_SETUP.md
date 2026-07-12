@@ -85,3 +85,15 @@ Execute novamente todo o arquivo `supabase/schema.sql` no SQL Editor. Ele adicio
 - `late_fee_value`: valor diário da taxa de atraso.
 
 Essas configurações são definidas pelo usuário de sessão ao criar ou editar cada usuário de serviço. Elas não ficam mais nas configurações gerais da sessão e não são compartilhadas entre usuários de serviço. O capital investido e os dados de clientes/vales continuam compartilhados pela sessão.
+
+## Funcionamento offline
+
+Depois que um usuário entrar ao menos uma vez com internet neste aparelho, o VALLE mantém localmente a sessão, o perfil, as permissões e o banco compartilhado da sessão.
+
+- Sem internet, clientes, VALLES, pagamentos, histórico e configurações continuam funcionando.
+- Cada alteração é salva imediatamente no aparelho e marcada como pendente.
+- Quando a conexão retorna, o sistema envia automaticamente a versão pendente para `session_workspaces` no Supabase.
+- Ações administrativas (criar, excluir, bloquear usuários ou alterar permissões) exigem internet.
+- O primeiro login de cada usuário em um aparelho também exige internet.
+
+O modelo atual usa um documento JSON compartilhado por sessão. Quando dois aparelhos alteram o mesmo banco enquanto ambos estão offline, a última versão que conseguir sincronizar será a versão mantida no Supabase.

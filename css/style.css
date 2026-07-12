@@ -8766,3 +8766,15 @@ body.dark::before{
     min-height:calc(var(--valle-vh, 1vh) * 100)!important;
   }
 }
+
+/* Status de conexão e sincronização offline */
+.valle-sync-badge{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:99999;padding:9px 14px;border-radius:999px;background:var(--card,#fff);color:var(--text,#172033);border:1px solid var(--border,#d9deea);box-shadow:0 8px 24px rgba(15,23,42,.18);font-size:12px;font-weight:800;white-space:nowrap;transition:.25s ease;pointer-events:none}
+.valle-sync-badge[data-state="offline"]{background:#fff7ed;color:#9a3412;border-color:#fdba74}
+.valle-sync-badge[data-state="syncing"]{background:#eef2ff;color:#5b21b6;border-color:#c4b5fd}
+.valle-sync-badge[data-state="synced"]{background:#ecfdf5;color:#047857;border-color:#6ee7b7}
+.valle-sync-badge.compact{opacity:0;transform:translate(-50%,12px)}
+body.dark .valle-sync-badge{background:var(--card,#161a2b);color:var(--text,#f4f4f8);border-color:var(--border,#343956)}
+body.dark .valle-sync-badge[data-state="offline"]{background:#2b1d17;color:#fdba74;border-color:#9a3412}
+body.dark .valle-sync-badge[data-state="syncing"]{background:#221c38;color:#c4b5fd;border-color:#6d28d9}
+body.dark .valle-sync-badge[data-state="synced"]{background:#10271f;color:#6ee7b7;border-color:#047857}
+@media(max-width:600px){.valle-sync-badge{max-width:calc(100vw - 24px);overflow:hidden;text-overflow:ellipsis}}

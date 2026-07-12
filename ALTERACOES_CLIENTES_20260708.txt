@@ -1,0 +1,6 @@
+Alteracoes na aba Clientes:
+- Botao LIMPAR renomeado para CANCELAR.
+- Botao SALVAR CLIENTE renomeado para SALVAR.
+- Ao abrir Clientes pelo menu, o formulario abre limpo.
+- Ao editar cliente, o botao muda para ATUALIZAR.
+- No celular, os botoes continuam na mesma linha.

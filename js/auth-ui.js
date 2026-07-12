@@ -12,6 +12,10 @@ const PERMS = [
 function htmlEscape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function el(id){return document.getElementById(id)}
 function setMsg(msg, error=true){const x=el('authMessage'); if(x){x.textContent=msg||'';x.classList.toggle('error',error)}}
+function ensureSyncBadge(){let b=document.getElementById('valleSyncBadge');if(!b){b=document.createElement('div');b.id='valleSyncBadge';b.className='valle-sync-badge';document.body.appendChild(b)}return b}
+function loginIsVisible(){const gate=el('authGate');return !!gate&&!gate.classList.contains('hidden')}
+function updateSyncBadge(detail={}){const b=ensureSyncBadge();if(!loginIsVisible()){b.classList.add('hidden');return}b.classList.remove('hidden');const state=detail.state||ValleCloud.syncState;const online=detail.online??ValleCloud.isOnline();if(!online||state==='offline'){b.textContent='● Offline — alterações serão salvas neste aparelho';b.dataset.state='offline'}else if(state==='syncing'){b.textContent='↻ Conectado — sincronizando…';b.dataset.state='syncing'}else{b.textContent='● Online';b.dataset.state='online'}b.classList.remove('compact')}
+function connectionToast(message,type='info'){if(typeof window.toast==='function'){window.toast(message,type);return}const t=el('toast');if(!t)return;t.textContent=message;t.className=`toast ${type} show`;t.style.display='block';clearTimeout(connectionToast.timer);connectionToast.timer=setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.style.display='none',300)},4000)}
 function whatsappLink(phone){const p=String(phone||'').replace(/\D/g,'');return p?`https://wa.me/${p}`:'#';}
 function roleLabel(role){
  const map={admin:'Administrador',session:'Usuário de sessão',service:'Usuário de serviço'};
@@ -237,6 +241,7 @@ function applyServiceFinancialSettings(settings){
 async function showRole(profile){
  const app=document.querySelector('.app'); const gate=el('authGate'); const panel=el('managementPanel');
  gate.classList.add('hidden');
+ updateSyncBadge();
  await activateProfileTheme(profile);
  if(profile.role==='service'){
    hideServiceSettingsTab();
@@ -316,7 +321,7 @@ function installContinuousCloudSync(){
  // serviço da mesma sessão. Não envia o banco às cegas, evitando sobrescrever
  // alterações mais novas de outro dispositivo.
  setInterval(async()=>{
-   if(ValleCloud.profile?.role!=='service')return;
+   if(ValleCloud.profile?.role!=='service'||!ValleCloud.isOnline())return;
    try{
      const snapshot=await ValleCloud.loadWorkspaceSnapshot();
      if(!snapshot?.data||!snapshot.updated_at)return;
@@ -488,6 +493,10 @@ function setupManagementTheme(){
 
 async function boot(){
  inject(); setupManagementTheme(); document.querySelector('.app').classList.add('hidden');
+ updateSyncBadge({state:ValleCloud.syncState,online:ValleCloud.isOnline()});
+ window.addEventListener('valle-cloud-sync',e=>updateSyncBadge(e.detail||{}));
+ window.addEventListener('online',()=>{updateSyncBadge({state:'syncing',online:true});connectionToast('Internet conectada. Sincronizando alterações com o Supabase.','success')});
+ window.addEventListener('offline',()=>{updateSyncBadge({state:'offline',online:false});connectionToast('Internet desconectada. As alterações serão salvas neste aparelho.','warn')});
  el('loginForm').onsubmit=async e=>{e.preventDefault();setMsg('Entrando...',false);el('authWhatsapp').classList.add('hidden');try{const p=await ValleCloud.signIn(el('loginEmail').value,el('loginPassword').value);setMsg('');await showRole(p)}catch(err){setMsg(err.message);if(err.whatsapp){const a=el('authWhatsapp');a.href=whatsappLink(err.whatsapp);a.classList.remove('hidden')}}};
  el('logoutBtn').onclick=async()=>{await ValleCloud.signOut();location.reload()};el('newManagedUserBtn').onclick=openNew;el('closeUserModal').onclick=closeModal;el('cancelUserModal').onclick=closeModal;el('userForm').onsubmit=saveManaged;
  try{const p=await ValleCloud.restoreSession();if(p?.blocked){setMsg(p.reason);if(p.whatsapp){const a=el('authWhatsapp');a.href=whatsappLink(p.whatsapp);a.classList.remove('hidden')}}else if(p)await showRole(p)}catch(e){setMsg(e.message)}

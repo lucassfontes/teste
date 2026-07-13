@@ -12,9 +12,9 @@ const PERMS = [
 function htmlEscape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function el(id){return document.getElementById(id)}
 function setMsg(msg, error=true){const x=el('authMessage'); if(x){x.textContent=msg||'';x.classList.toggle('error',error)}}
-function ensureSyncBadge(){let b=document.getElementById('valleSyncBadge');if(!b){b=document.createElement('div');b.id='valleSyncBadge';b.className='valle-sync-badge';document.body.appendChild(b)}return b}
 function loginIsVisible(){const gate=el('authGate');return !!gate&&!gate.classList.contains('hidden')}
-function updateSyncBadge(detail={}){const b=ensureSyncBadge();if(!loginIsVisible()){b.classList.add('hidden');return}b.classList.remove('hidden');const state=detail.state||ValleCloud.syncState;const online=detail.online??ValleCloud.isOnline();if(!online||state==='offline'){b.textContent='● Offline — alterações serão salvas neste aparelho';b.dataset.state='offline'}else if(state==='syncing'){b.textContent='↻ Conectado — sincronizando…';b.dataset.state='syncing'}else{b.textContent='● Online';b.dataset.state='online'}b.classList.remove('compact')}
+// O indicador Online/Offline foi removido da tela de login.
+function updateSyncBadge(){const b=document.getElementById('valleSyncBadge');if(b)b.remove()}
 function connectionToast(message,type='info'){if(typeof window.toast==='function'){window.toast(message,type);return}const t=el('toast');if(!t)return;t.textContent=message;t.className=`toast ${type} show`;t.style.display='block';clearTimeout(connectionToast.timer);connectionToast.timer=setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.style.display='none',300)},4000)}
 function whatsappLink(phone){const p=String(phone||'').replace(/\D/g,'');return p?`https://wa.me/${p}`:'#';}
 function roleLabel(role){
@@ -33,7 +33,6 @@ function inject(){
  <section id="authGate" class="auth-gate">
   <div class="auth-card">
    <img src="icons/icon-valle.png" alt="VALLE" class="auth-logo">
-   <button id="authThemeBtn" class="auth-theme-btn" type="button" title="Alternar tema">🌙</button>
    <h1>VALLE</h1><p>Entre para acessar sua conta</p>
    <form id="loginForm"><label>E-mail<input id="loginEmail" type="email" required autocomplete="username"></label>
    <label>Senha<input id="loginPassword" type="password" required autocomplete="current-password"></label>
@@ -42,6 +41,10 @@ function inject(){
    <a id="authWhatsapp" class="auth-whatsapp hidden" target="_blank" rel="noopener">FALAR COM O ADMINISTRADOR</a>
    <small class="auth-setup ${ValleCloud.configured?'hidden':''}">Configure o Supabase em <b>js/supabase-config.js</b>.</small>
   </div>
+  
+  <button id="authThemeBtn" class=" position-absolute bottom-0 end-0 mb-2 me-2" type="button" title="Alternar tema" aria-label="Alternar tema">
+    <i class="bi bi-moon-stars-fill"></i>
+  </button>
  </section>
  <section id="managementPanel" class="management-panel hidden">
    <header class="management-top"><div><img src="icons/icon-valle.png"><div><h1>VALLE</h1><p id="managementSubtitle"></p></div></div><div class="management-top-actions"><div class="management-user-menu"><button type="button" class="management-user-trigger" id="managementUserTrigger" aria-expanded="false"><span class="management-trigger-avatar">U</span><span class="management-trigger-copy"><strong id="managementUserName">Usuário</strong><small id="managementUserPanelLabel">Painel</small></span><span class="dashboard-user-chevron" aria-hidden="true">⌄</span></button><div class="management-user-dropdown hidden" id="managementUserDropdown"><div class="dashboard-user-info"><strong id="managementUserDropdownName">Usuário</strong><small id="managementUserDropdownEmail"></small></div><button type="button" id="managementThemeBtn" class="user-theme-menu-btn">🌙 Modo escuro</button><button type="button" id="logoutBtn" class="user-logout-menu-btn">↪ Sair</button></div></div></div></header>
@@ -57,12 +60,6 @@ function inject(){
   <span class="active-check" aria-hidden="true">✓</span>
   <span class="active-copy"><strong>Usuário ativo</strong><small>Usuário poderá acessar o sistema normalmente.</small></span>
  </label>
- <fieldset id="serviceFinancialBox" class="service-financial-box hidden"><legend>Configurações financeiras do usuário</legend>
-  <label>Percentual de juros<input id="managedInterestPercent" inputmode="decimal" placeholder="Ex: 30%" value="30%"></label>
-  <label>Tipo da taxa de atraso<select id="managedLateFeeType"><option value="percentual">PORCENTAGEM</option><option value="reais">VALOR FIXO</option></select></label>
-  <label>Taxa de atraso diário<input id="managedLateFeeValue" inputmode="decimal" placeholder="Ex: 2% ou R$ 5,00" value="0%"></label>
-  <p>Estas configurações são exclusivas deste usuário de serviço.</p>
- </fieldset>
  <fieldset id="permissionsBox" class="permissions-box"><legend>Permissões do usuário de serviço</legend>${PERMS.map(([k,n])=>`<label><input type="checkbox" data-perm="${k}" checked> ${n}</label>`).join('')}</fieldset>
  <div class="modal-actions"><button type="button" id="cancelUserModal" class="btn light">CANCELAR</button><button class="btn primary" type="submit">SALVAR</button></div></form></div></div>`);
 }
@@ -77,7 +74,7 @@ function updateThemeButtons(theme){
  const labels=[['dashboardThemeBtn',dark?'Modo claro':'Modo escuro'],['managementThemeBtn',dark?'Modo claro':'Modo escuro']];
  labels.forEach(([id,text])=>{const b=el(id);if(b)b.textContent=text});
  const a=el('authThemeBtn');
- if(a){a.textContent=dark?'☀️':'🌙';a.title=dark?'Mudar para modo claro':'Mudar para modo escuro';}
+ if(a){a.innerHTML=dark?'<i class="bi bi-sun-fill"></i>':'<i class="bi bi-moon-stars-fill"></i>';a.title=dark?'Mudar para modo claro':'Mudar para modo escuro';a.setAttribute('aria-label',a.title);}
 }
 function applyUserTheme(theme,profile=null){
  const value=theme==='dark'?'dark':'light';
@@ -127,6 +124,31 @@ function setupDashboardUserMenu(profile){
  const dropdown=el('dashboardUserDropdown');
  const logout=el('dashboardLogoutBtn');
  const themeBtn=el('dashboardThemeBtn');
+ // Mantém o menu fora do cabeçalho/section para evitar deslocamento por overflow,
+ // transformações e grids responsivos do Dashboard.
+ if(dropdown && dropdown.parentElement!==document.body) document.body.appendChild(dropdown);
+ const positionDashboardMenu=source=>{
+   if(!dropdown||!source) return;
+   const rect=source.getBoundingClientRect?.();
+   if(!rect) return;
+   const menuWidth=Math.min(224,window.innerWidth-24);
+   const menuHeight=dropdown.offsetHeight||224;
+   const left=Math.max(12,Math.min(window.innerWidth-menuWidth-12,rect.right-menuWidth));
+   const isMobile=window.innerWidth<760;
+   const roomBelow=window.innerHeight-rect.bottom-12;
+   // No celular, o card do menu deve abrir sempre logo abaixo do botão.
+   // No desktop, mantém o ajuste automático quando não houver espaço abaixo.
+   const top=isMobile ? rect.bottom+8 : (roomBelow>=menuHeight ? rect.bottom+8 : Math.max(12,rect.top-menuHeight-8));
+   dropdown.style.setProperty('max-height',isMobile ? Math.max(140,window.innerHeight-top-12)+'px' : 'none','important');
+   dropdown.style.setProperty('overflow-y',isMobile ? 'auto' : 'visible','important');
+   dropdown.style.setProperty('position','fixed','important');
+   dropdown.style.setProperty('left',left+'px','important');
+   dropdown.style.setProperty('right','auto','important');
+   dropdown.style.setProperty('top',top+'px','important');
+   dropdown.style.setProperty('bottom','auto','important');
+   dropdown.style.setProperty('transform','none','important');
+   dropdown.style.setProperty('z-index','2147483000','important');
+ };
  const toggle=ev=>{
    ev?.stopPropagation();
    if(!dropdown) return;
@@ -135,20 +157,23 @@ function setupDashboardUserMenu(profile){
    trigger?.setAttribute('aria-expanded',String(opening));
    mobile?.setAttribute('aria-expanded',String(opening));
    if(opening){
-     const source=ev?.currentTarget || trigger || mobile;
-     const rect=source?.getBoundingClientRect?.();
-     if(rect){
-       const menuWidth=Math.min(224,window.innerWidth-24);
-       const left=Math.max(12,Math.min(window.innerWidth-menuWidth-12,rect.right-menuWidth));
-       dropdown.style.position='fixed';
-       dropdown.style.left=left+'px';
-       dropdown.style.right='auto';
-       dropdown.style.top=(rect.bottom+8)+'px';
-     }
+     const source=ev?.currentTarget || (window.innerWidth<760?mobile:trigger) || trigger || mobile;
+     requestAnimationFrame(()=>positionDashboardMenu(source));
    }
  };
  if(trigger && !trigger.dataset.bound){trigger.dataset.bound='1';trigger.addEventListener('click',toggle)}
  if(mobile && !mobile.dataset.bound){mobile.dataset.bound='1';mobile.addEventListener('click',toggle)}
+ if(!document.documentElement.dataset.dashboardMenuViewportBound){
+   document.documentElement.dataset.dashboardMenuViewportBound='1';
+   const refresh=()=>{
+     if(!dropdown||dropdown.classList.contains('hidden')) return;
+     const source=window.innerWidth<760?(mobile||trigger):(trigger||mobile);
+     positionDashboardMenu(source);
+   };
+   window.addEventListener('resize',refresh,{passive:true});
+   window.addEventListener('orientationchange',refresh,{passive:true});
+   window.addEventListener('scroll',refresh,{passive:true,capture:true});
+ }
  if(themeBtn && !themeBtn.dataset.bound){themeBtn.dataset.bound='1';themeBtn.addEventListener('click',async ev=>{ev.stopPropagation();await toggleUserTheme()})}
  if(logout && !logout.dataset.bound){logout.dataset.bound='1';logout.addEventListener('click',async()=>{await ValleCloud.signOut();location.reload()})}
  updateThemeButtons(window.VALLE_ACTIVE_THEME||'light');
@@ -181,14 +206,36 @@ function setupManagementUserMenu(profile){
  const dropdown=el('managementUserDropdown');
  const themeBtn=el('managementThemeBtn');
  const logout=el('logoutBtn');
- const toggle=ev=>{ev?.stopPropagation();if(!dropdown)return;const opening=dropdown.classList.contains('hidden');dropdown.classList.toggle('hidden',!opening);trigger?.setAttribute('aria-expanded',String(opening));if(opening){const rect=trigger?.getBoundingClientRect?.();if(rect){const menuWidth=Math.min(224,window.innerWidth-24);const left=Math.max(12,Math.min(window.innerWidth-menuWidth-12,rect.right-menuWidth));dropdown.style.position='fixed';dropdown.style.left=left+'px';dropdown.style.right='auto';dropdown.style.top=(rect.bottom+8)+'px';}}};
+ // Mantém o menu fora dos cards para que sempre abra por cima do conteúdo.
+ if(dropdown && dropdown.parentElement!==document.body) document.body.appendChild(dropdown);
+ const positionDropdown=()=>{
+  if(!dropdown||!trigger)return;
+  const rect=trigger.getBoundingClientRect();
+  const mobile=window.matchMedia('(max-width:720px)').matches;
+  const menuWidth=Math.min(mobile?216:Math.max(280,rect.width),window.innerWidth-24);
+  // No celular, usa um card compacto e alinha a borda direita exatamente com o botão.
+  // O mesmo posicionamento é aplicado aos painéis Administrador e Sessão.
+  const preferredLeft=rect.right-menuWidth;
+  const left=Math.max(12,Math.min(window.innerWidth-menuWidth-12,preferredLeft));
+  const top=rect.bottom+(mobile?8:10);
+  dropdown.style.setProperty('position','fixed','important');
+  dropdown.style.setProperty('width',menuWidth+'px','important');
+  dropdown.style.setProperty('max-width','calc(100vw - 24px)','important');
+  dropdown.style.setProperty('left',left+'px','important');
+  dropdown.style.setProperty('right','auto','important');
+  dropdown.style.setProperty('top',top+'px','important');
+  dropdown.style.setProperty('bottom','auto','important');
+  dropdown.style.setProperty('transform','none','important');
+  dropdown.style.setProperty('z-index','2147483000','important');
+};
+ const toggle=ev=>{ev?.stopPropagation();if(!dropdown)return;const opening=dropdown.classList.contains('hidden');dropdown.classList.toggle('hidden',!opening);trigger?.setAttribute('aria-expanded',String(opening));if(opening)positionDropdown();};
  if(trigger&&!trigger.dataset.bound){trigger.dataset.bound='1';trigger.addEventListener('click',toggle)}
  if(themeBtn&&!themeBtn.dataset.bound){themeBtn.dataset.bound='1';themeBtn.addEventListener('click',async ev=>{ev.stopPropagation();await toggleUserTheme()})}
  if(logout&&!logout.dataset.bound){logout.dataset.bound='1';logout.addEventListener('click',async()=>{await ValleCloud.signOut();location.reload()})}
  updateThemeButtons(window.VALLE_ACTIVE_THEME||'light');
  if(!document.documentElement.dataset.managementMenuBound){
   document.documentElement.dataset.managementMenuBound='1';
-  document.addEventListener('click',ev=>{if(dropdown&&!dropdown.classList.contains('hidden')&&!ev.target.closest('.management-user-menu')){dropdown.classList.add('hidden');trigger?.setAttribute('aria-expanded','false')}});
+  document.addEventListener('click',ev=>{if(dropdown&&!dropdown.classList.contains('hidden')&&!trigger?.contains(ev.target)&&!dropdown.contains(ev.target)){dropdown.classList.add('hidden');trigger?.setAttribute('aria-expanded','false')}});window.addEventListener('resize',()=>{if(dropdown&&!dropdown.classList.contains('hidden'))positionDropdown()});window.addEventListener('scroll',()=>{if(dropdown&&!dropdown.classList.contains('hidden'))positionDropdown()},{passive:true});
  }
 }
 
@@ -234,9 +281,6 @@ function applyServiceFinancialSettings(settings){
  };
  const current=window.getValleDatabase?window.getValleDatabase():window.db;
  if(current?.settings){
-  current.settings.percentualJuros50=window.VALLE_SERVICE_FINANCIAL_SETTINGS.interest_percent;
-  current.settings.tipoTaxaAtrasoDiario=window.VALLE_SERVICE_FINANCIAL_SETTINGS.late_fee_type;
-  current.settings.taxaAtrasoDiario=window.VALLE_SERVICE_FINANCIAL_SETTINGS.late_fee_value;
  }
 }
 
@@ -380,7 +424,6 @@ function configureManagedForm(role, editing=false){
  const validity=el('managedValidityWrap');
  const whatsapp=el('managedWhatsappWrap');
  const perms=el('permissionsBox');
- const financial=el('serviceFinancialBox');
  // Validade e WhatsApp pertencem somente ao usuário de sessão criado pelo ADM.
  validity.classList.toggle('hidden',!isAdmin);
  whatsapp.classList.toggle('hidden',!isAdmin);
@@ -388,8 +431,6 @@ function configureManagedForm(role, editing=false){
  whatsapp.style.display=isAdmin?'':'none';
  perms.classList.toggle('hidden',!isSession);
  perms.style.display=isSession?'':'none';
- financial?.classList.toggle('hidden',!isSession);
- if(financial) financial.style.display=isSession?'':'none';
  if(!isAdmin){el('managedValidity').value='';el('managedWhatsapp').value='';}
  // O ADM, ao editar, administra apenas validade/status. Dados de identidade ficam protegidos.
  el('managedName').disabled=isAdmin&&editing;
@@ -398,9 +439,6 @@ function configureManagedForm(role, editing=false){
 }
 function openNew(){
  el('userForm').reset(); el('managedId').value=''; el('managedActive').checked=true;
- if(el('managedInterestPercent'))el('managedInterestPercent').value='30%';
- if(el('managedLateFeeType'))el('managedLateFeeType').value='percentual';
- if(el('managedLateFeeValue'))el('managedLateFeeValue').value='0%';
  const admin=ValleCloud.profile.role==='admin';
  el('userModalTitle').textContent=admin?'Novo usuário de sessão':'Novo usuário de serviço';
  document.querySelector('#userForm .btn.primary').textContent='Salvar';
@@ -420,9 +458,6 @@ async function openEdit(id,users){
  if(u.role==='service'){
   const p=await ValleCloud.getPermissions(u.id);
   document.querySelectorAll('[data-perm]').forEach(x=>x.checked=p[x.dataset.perm]!==false);
-  if(el('managedInterestPercent'))el('managedInterestPercent').value=String(Number(p.interest_percent??30)).replace('.',',')+'%';
-  if(el('managedLateFeeType'))el('managedLateFeeType').value=p.late_fee_type==='reais'?'reais':'percentual';
-  if(el('managedLateFeeValue'))el('managedLateFeeValue').value=(p.late_fee_type==='reais'?money(Number(p.late_fee_value||0)):String(Number(p.late_fee_value||0)).replace('.',',')+'%');
  }
  el('userModal').classList.remove('hidden');
 }
@@ -474,9 +509,6 @@ async function saveManaged(e){
   const result=await ValleCloud.invokeManage(id?'update':'create',payload); const uid=id||result.userId;
   if(callerRole==='session'){
    const perms={};document.querySelectorAll('[data-perm]').forEach(x=>perms[x.dataset.perm]=x.checked);
-   perms.interest_percent=taxaNum(el('managedInterestPercent')?.value||'30');
-   perms.late_fee_type=el('managedLateFeeType')?.value==='reais'?'reais':'percentual';
-   perms.late_fee_value=perms.late_fee_type==='reais'?moneyNum(el('managedLateFeeValue')?.value||'0'):taxaNum(el('managedLateFeeValue')?.value||'0');
    await ValleCloud.savePermissions(uid,perms);
   }
   closeModal(); await renderUsers();

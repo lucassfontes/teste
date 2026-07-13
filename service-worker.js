@@ -1,9 +1,10 @@
 /** VALLE PWA — funcionamento offline + sincronização ao reconectar */
-const CACHE = 'valle-v35-management-menu-20260712-v1';
+const CACHE = 'valle-receive-mobile-footer-20260713-v1';
 const APP_SHELL = [
   './','./index.html','./manifest.json','./favicon.ico',
-  './css/style.css?v=20260712-management-menu','./css/dark.css','./css/print.css',
-  './js/app.js?v=20260711-user-theme','./js/auth-ui.js?v=20260712-management-menu',
+  './vendor/bootstrap/bootstrap.min.css','./vendor/bootstrap/bootstrap.bundle.min.js',
+  './vendor/bootstrap-icons/bootstrap-icons.min.css','./css/app.css?v=20260713-receive-mobile-footer-v1',
+  './js/app.js?v=20260713-taxas-cliente-v1','./js/auth-ui.js?v=20260713-taxas-cliente-v1','./js/bootstrap-enhance.js?v=20260712-standard-v4',
   './js/supabase-config.js','./js/supabase-client.js?v=20260712-offline2',
   './js/pdf.js','./js/whatsapp.js','./js/clientes.js','./js/historico.js',
   './js/dashboard.js','./js/backup.js','./js/storage.js','./js/util.js',

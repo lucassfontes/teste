@@ -13,19 +13,11 @@
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="css/style.css?v=20260712-management-menu">
-  <link rel="stylesheet" href="css/dark.css">
-
-<style>
-.backup-actions .filebtn{
-display:flex;
-align-items:center;
-justify-content:center;
-text-align:center;
-}
-</style>
+  <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/app.css?v=20260713-receive-mobile-footer-v1">
 </head>
-<body>
+<body class="bootstrap-only-ui">
 <div class="app">
   <!-- Cabeçalho principal: título do sistema. A badge de prazo fica somente na aba Novo. -->
   <header class="topbar glass">
@@ -58,7 +50,7 @@ text-align:center;
       </div>
 
       <div class="premium-desktop-head">
-        <div class="premium-search">🔎 <input id="dashboardBusca" type="search" placeholder="Buscar cliente, vale ou telefone..." oninput="renderPremiumDashboard()"></div>
+        <div class="premium-dashboard-heading"><h2>Dashboard</h2><p>Visão geral do sistema</p></div>
         <div class="premium-head-right"><span>📅 <b id="dashDataHoje">--/--/----</b></span><span class="bell-dot">🔔<em id="dashNotifMini2">0</em></span><div class="dashboard-user-menu"><button type="button" class="dashboard-user-trigger" id="dashboardUserTrigger" aria-expanded="false"><span>👤</span><strong id="dashboardUserName">Usuário</strong><span class="dashboard-user-chevron">▾</span></button></div></div>
       </div>
       <div class="dashboard-user-dropdown hidden" id="dashboardUserDropdown"><div class="dashboard-user-info"><strong id="dashboardUserDropdownName">Usuário</strong><small id="dashboardUserDropdownEmail"></small></div><button type="button" id="dashboardThemeBtn" class="user-theme-menu-btn">Modo escuro</button><button type="button" id="dashboardLogoutBtn">Sair</button></div>
@@ -123,60 +115,157 @@ text-align:center;
       <div id="historicoFinanceiro" hidden></div>
     </section>
 
-    <!-- Aba Notificações: mostra cobranças urgentes no estilo conversa/WhatsApp. -->
+    <!-- Aba Notificações: interface Bootstrap no mesmo padrão visual do Novo VALLE. -->
     <section id="notificacoes" class="screen notifications-screen">
-      <div class="card notifications-header-card">
-        <div class="section-head"><h2>🔔 Notificações</h2><small>Cobranças atrasadas e próximas do vencimento</small></div>
-        <div id="notificacoesResumo" class="notificacoes-resumo"></div>
-        <div class="notif-filter-controls" aria-label="Filtros de notificações">
-          <button type="button" class="notif-filter-btn active todos" data-notif-filter="todos" onclick="setNotificationFilter('todos')">TODOS</button>
-          <button type="button" class="notif-filter-btn atrasados" data-notif-filter="atrasados" onclick="setNotificationFilter('atrasados')">ATRASADOS</button>
-          <button type="button" class="notif-filter-btn hoje" data-notif-filter="hoje" onclick="setNotificationFilter('hoje')">HOJE</button>
-          <button type="button" class="notif-filter-btn proximos" data-notif-filter="proximos" onclick="setNotificationFilter('proximos')">PRÓXIMOS</button>
+      <div class="card notification-bootstrap-card">
+        <div class="notification-bootstrap-header">
+          <div class="notification-bootstrap-icon" aria-hidden="true"><i class="bi bi-bell-fill"></i></div>
+          <div class="notification-bootstrap-heading">
+            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+              <h2 class="mb-0">NOTIFICAÇÕES</h2>
+              <span class="badge notification-count-badge"><i class="bi bi-bell me-1"></i><span id="notifHeaderCount">0</span></span>
+            </div>
+            <p class="mb-0">Cobranças atrasadas e próximas do vencimento.</p>
+          </div>
         </div>
-<input class="search" id="notificacoesSearch" type="search" placeholder="🔍 PESQUISAR NAS NOTIFICAÇÕES" oninput="renderNotifications()" autocomplete="off">
+
+        <div class="notification-bootstrap-body">
+          <div id="notificacoesResumo" class="notificacoes-resumo"></div>
+          <div class="btn-group w-100 notification-filter-group" role="group" aria-label="Filtros de notificações">
+            <button type="button" class="btn btn-outline-primary notif-filter-btn active todos" data-notif-filter="todos" onclick="setNotificationFilter('todos')"><i class="bi bi-list-ul me-1"></i>TODOS</button>
+            <button type="button" class="btn btn-outline-danger notif-filter-btn atrasados" data-notif-filter="atrasados" onclick="setNotificationFilter('atrasados')"><i class="bi bi-exclamation-octagon-fill me-1"></i>ATRASADOS</button>
+            <button type="button" class="btn btn-outline-warning notif-filter-btn hoje" data-notif-filter="hoje" onclick="setNotificationFilter('hoje')"><i class="bi bi-clock-fill me-1"></i>VENCE HOJE</button>
+            <button type="button" class="btn btn-outline-success notif-filter-btn proximos" data-notif-filter="proximos" onclick="setNotificationFilter('proximos')"><i class="bi bi-calendar-check-fill me-1"></i>PRÓXIMOS</button>
+          </div>
+          <div class="input-group notification-search-group mt-3">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input class="form-control" id="notificacoesSearch" type="search" placeholder="PESQUISAR NAS NOTIFICAÇÕES" oninput="renderNotifications()" autocomplete="off">
+          </div>
+        </div>
       </div>
-      <div id="notificacoesContainer" class="notifications-list"></div>
+      <div id="notificacoesContainer" class="notifications-list mt-3"></div>
     </section>
 
-    <!-- Aba Novo VALLE: formulário para criar ou editar um vale. -->
+    <!-- Aba Novo VALLE: formulário Bootstrap para criar ou editar um vale. -->
     <section id="emprestimo" class="screen">
-      <div class="card form-card">
-        <div class="section-head"><h2>💰 Novo VALLE</h2><span class="badge"><span id="diasBadge">30</span> DIAS</span></div>
-        <div class="form-grid">
-          <label class="field"><span>👤 Cliente</span><input id="loanCliente" list="clientesLista" placeholder="DIGITE OU ESCOLHA" autocomplete="off"><datalist id="clientesLista"></datalist></label>
-          <label class="field"><span>💵 Valor do VALLE</span><input id="loanValor" inputmode="numeric" placeholder="R$ 0,00"></label>
-          <label class="field"><span>📈 Juros</span><input id="loanJuros" inputmode="decimal" value="30%"></label>
-          <label class="field"><span>✅ Total</span><input id="loanTotal" readonly placeholder="R$ 0,00"></label>
-          <label class="field"><span>📅 Data inicial</span><input id="loanInicio" type="date"></label>
-          <label class="field"><span>📅 Data final</span><input id="loanFinal" type="date"></label>
-          <label class="field full"><span>📝 Observação</span><textarea id="loanObs" placeholder="OBSERVAÇÃO DO VALE"></textarea></label>
+      <div class="card form-card loan-bootstrap-card">
+        <div class="loan-bootstrap-header">
+          <div class="loan-bootstrap-icon" aria-hidden="true"><i class="bi bi-cash-coin"></i></div>
+          <div class="loan-bootstrap-heading">
+            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+              <h2 class="mb-0">NOVO VALLE</h2>
+              <span class="badge loan-days-badge"><i class="bi bi-calendar3 me-1"></i><span id="diasBadge">30</span> DIAS</span>
+            </div>
+            <p class="mb-0">Preencha os dados para cadastrar um novo vale.</p>
+          </div>
         </div>
-        <div class="actions loan-actions">
-          <button class="btn light" id="cancelLoanBtn" type="button">✖️ Cancelar</button>
-          <button class="btn primary" id="saveOnlyBtn" type="button">💾 Salvar</button>
-        </div>
+
+        <form class="loan-bootstrap-form" onsubmit="return false;">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label" for="loanCliente"><i class="bi bi-person-fill me-2"></i>CLIENTE</label>
+              <div class="input-group loan-input-group">
+                <span class="input-group-text"><i class="bi bi-person-check"></i></span>
+                <input class="form-control" id="loanCliente" list="clientesLista" placeholder="DIGITE OU ESCOLHA O CLIENTE" autocomplete="off">
+                <datalist id="clientesLista"></datalist>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="loanValor"><i class="bi bi-currency-dollar me-2"></i>VALOR DO VALLE</label>
+              <div class="input-group loan-input-group">
+                <span class="input-group-text">R$</span>
+                <input class="form-control" id="loanValor" inputmode="numeric" placeholder="0,00">
+              </div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="loanJuros"><i class="bi bi-percent me-2"></i>JUROS</label>
+              <div class="input-group loan-input-group">
+                <span class="input-group-text" aria-hidden="true"><i class="bi bi-percent"></i></span>
+                <input class="form-control" id="loanJuros" inputmode="decimal" value="30%" aria-label="Taxa de juros">
+              </div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="loanTipoTaxaDiaria"><i class="bi bi-sliders me-2"></i>TIPO DA TAXA DIÁRIA</label>
+              <select class="form-select loan-form-control" id="loanTipoTaxaDiaria" aria-label="Tipo da taxa diária">
+                <option value="percentual">PORCENTAGEM (%)</option>
+                <option value="reais">VALOR FIXO (R$)</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="loanTaxaDiaria"><i class="bi bi-calendar-plus me-2"></i>TAXA DIÁRIA</label>
+              <div class="input-group loan-input-group">
+                <span class="input-group-text" id="loanTaxaDiariaPrefix">%</span>
+                <input class="form-control" id="loanTaxaDiaria" inputmode="decimal" value="0%" aria-label="Taxa diária por atraso">
+              </div>
+              <div class="form-text loan-rate-help">Aplicada por dia após o vencimento.</div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="loanInicio"><i class="bi bi-calendar-event me-2"></i>DATA INICIAL</label>
+              <input class="form-control loan-form-control" id="loanInicio" type="date">
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="loanFinal"><i class="bi bi-calendar-check me-2"></i>DATA FINAL</label>
+              <input class="form-control loan-form-control" id="loanFinal" type="date">
+            </div>
+
+            <div class="col-12">
+              <label class="form-label" for="loanTotal"><i class="bi bi-check2-circle me-2"></i>TOTAL COM JUROS</label>
+              <div class="input-group loan-input-group loan-total-group">
+                <span class="input-group-text"><i class="bi bi-wallet2"></i></span>
+                <input class="form-control" id="loanTotal" readonly placeholder="R$ 0,00">
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label" for="loanObs"><i class="bi bi-card-text me-2"></i>OBSERVAÇÃO</label>
+              <textarea class="form-control loan-form-control loan-observation" id="loanObs" rows="4" placeholder="OBSERVAÇÃO DO VALE"></textarea>
+            </div>
+          </div>
+
+          <div class="loan-bootstrap-actions d-flex justify-content-end gap-2 flex-wrap mt-4 pt-3">
+            <button class="btn btn-outline-secondary" id="cancelLoanBtn" type="button"><i class="bi bi-x-circle me-2"></i>CANCELAR</button>
+            <button class="btn btn-primary" id="saveOnlyBtn" type="button"><i class="bi bi-check-circle me-2"></i>SALVAR</button>
+          </div>
+        </form>
       </div>
     </section>
 
-    <!-- Aba Clientes: cadastro simples com nome, telefone, CPF e observações. -->
+    <!-- Aba Clientes: pesquisa e cadastro aberto em modal. -->
     <section id="clientes" class="screen">
-      <div class="card form-card">
-        <h2>👤 Cadastro de clientes</h2>
-        <input type="hidden" id="clienteId">
-        <div class="form-grid">
-          <label class="field"><span>👤 Nome</span><input id="cliNome" placeholder="NOME DO CLIENTE"></label>
-          <label class="field"><span>📱 Telefone</span><input id="cliTelefone" inputmode="tel" placeholder="(94) 99999-9999"></label>
-          <label class="field"><span>🪪 CPF</span><input id="cliCpf" inputmode="numeric" placeholder="000.000.000-00"></label>
-          <label class="field full"><span>📝 Observações</span><textarea id="cliObs" placeholder="OBSERVAÇÕES DO CLIENTE"></textarea></label>
+      <div class="card clientes-list-card">
+        <div class="clientes-page-header">
+          <div class="clientes-page-header-icon" aria-hidden="true">👥</div>
+          <div class="clientes-page-header-copy">
+            <h2>CLIENTES</h2>
+            <p>Gerencie os clientes cadastrados</p>
+          </div>
         </div>
-        <div class="actions">
-          <button class="btn primary" id="saveClientBtn">SALVAR</button>
-          <button class="btn light" id="clearClientBtn">CANCELAR</button>
+        <div class="clientes-toolbar">
+          <div class="input-group clientes-search-group">
+            <span class="input-group-text clientes-search-icon" aria-hidden="true">
+              <i class="bi bi-search"></i>
+            </span>
+            <input
+              class="form-control clientes-search-input"
+              id="searchClientes"
+              type="search"
+              placeholder="PESQUISAR CLIENTE"
+              aria-label="Pesquisar cliente">
+            <button
+              class="btn btn-success clientes-new-btn-bootstrap"
+              id="openClientModalBtn"
+              type="button">
+              <i class="bi bi-plus-circle-fill" aria-hidden="true"></i>
+              <span>NOVO</span>
+            </button>
+          </div>
         </div>
-      </div>
-      <div class="card">
-        <input class="search" id="searchClientes" placeholder="🔍 PESQUISAR CLIENTE">
         <div id="clientesContainer" class="list cards"></div>
       </div>
     </section>
@@ -275,8 +364,63 @@ text-align:center;
   </main>
 </div>
 
-<div id="receiveModal" class="receive-modal">
-  <div id="receiveModalBody" class="receive-card"></div>
+<div class="modal fade valle-client-modal bootstrap-only-ui" id="clientModal" tabindex="-1" aria-labelledby="clientModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header align-items-start">
+        <div class="d-flex align-items-center gap-3 pe-3">
+          <span class="client-modal-title-icon" aria-hidden="true"><i class="bi bi-person-plus-fill"></i></span>
+          <div>
+            <h2 class="modal-title" id="clientModalTitle">Cadastro de cliente</h2>
+            <p class="client-modal-subtitle">Preencha os dados para cadastrar um novo cliente.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="clienteId">
+        <div class="row g-4">
+          <div class="col-12">
+            <label for="cliNome" class="form-label"><i class="bi bi-person-fill"></i><span>Nome</span></label>
+            <input type="text" class="form-control form-control-lg" id="cliNome" placeholder="Nome do cliente" autocomplete="name">
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label for="cliTelefone" class="form-label"><i class="bi bi-telephone-fill"></i><span>Telefone</span></label>
+            <input type="tel" class="form-control form-control-lg" id="cliTelefone" inputmode="tel" placeholder="(94) 99999-9999" autocomplete="tel">
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label for="cliCpf" class="form-label"><i class="bi bi-person-vcard-fill"></i><span>CPF</span></label>
+            <input type="text" class="form-control form-control-lg" id="cliCpf" inputmode="numeric" placeholder="000.000.000-00">
+          </div>
+
+          <div class="col-12">
+            <label for="cliObs" class="form-label"><i class="bi bi-card-text"></i><span>Observações</span></label>
+            <textarea class="form-control" id="cliObs" rows="4" placeholder="Observações do cliente"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary btn-lg" id="clearClientBtn" type="button">
+          <i class="bi bi-x-circle"></i><span>Cancelar</span>
+        </button>
+        <button class="btn btn-primary btn-lg" id="saveClientBtn" type="button">
+          <i class="bi bi-check2-circle"></i><span>Salvar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade receive-bs-modal" id="receiveModal" tabindex="-1" aria-labelledby="receiveModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div id="receiveModalBody"></div>
+    </div>
+  </div>
 </div>
 
 <div id="partialPaymentModal" class="partial-payment-modal">
@@ -286,10 +430,12 @@ text-align:center;
 <div id="toast" class="toast"></div>
 <!-- JavaScript principal do sistema. Toda a lógica fica em js/app.js. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="js/supabase-config.js"></script>
 <script src="js/supabase-client.js?v=20260712-offline2"></script>
-<script src="js/app.js?v=20260711-user-theme"></script>
-<script src="js/auth-ui.js?v=20260712-management-menu"></script>
+<script src="js/app.js?v=20260713-modal-receber-refeito-v1"></script>
+<script src="js/auth-ui.js?v=20260713-taxas-cliente-v1"></script>
+<script src="js/bootstrap-enhance.js?v=20260712-standard-v4"></script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js').catch(()=>{});}</script>
 </body>
 </html>

@@ -30,6 +30,9 @@ var db = load();
 window.db = db;
 // Quando está editando um vale, guarda aqui o ID dele. Se for null, é vale novo.
 let editLoanId = null;
+let clientFormSnapshot = '';
+let clientModalForceClose = false;
+let loanFormSnapshot = '';
 // Atalho para buscar elementos HTML pelo ID. Exemplo: $('loanValor').
 const $ = (id) => document.getElementById(id);
 
@@ -174,6 +177,9 @@ function normalizeDb(obj, usarChavesSeparadas = false) {
       telefone: phoneMask(c.telefone || c.phone || ''),
       cpf: cpfMask(c.cpf || ''),
       obs: upper(c.obs || c.observacao || ''),
+      jurosPadrao: Number(c.jurosPadrao ?? c.interest_percent ?? 30),
+      tipoTaxaAtrasoDiario: c.tipoTaxaAtrasoDiario === 'reais' || c.late_fee_type === 'reais' ? 'reais' : 'percentual',
+      taxaAtrasoDiario: Number(c.taxaAtrasoDiario ?? c.late_fee_value ?? 0),
       vip: !!c.vip
     };
   }).filter(c => c.nome);
@@ -187,6 +193,8 @@ function normalizeDb(obj, usarChavesSeparadas = false) {
     cpf: cpfMask(v.cpf || ''),
     valor: Number(v.valor || 0),
     juros: Number(v.juros || 0),
+    tipoTaxaAtrasoDiario: v.tipoTaxaAtrasoDiario === 'reais' ? 'reais' : 'percentual',
+    taxaAtrasoDiario: Number(v.taxaAtrasoDiario || 0),
     total: Number(v.total || 0),
     valorOriginal: Number(v.valorOriginal ?? v.valor ?? 0),
     totalOriginal: Number(v.totalOriginal ?? v.total ?? 0),
@@ -441,17 +449,20 @@ function dailyLateFee(v) {
   const hoje = inputDate(new Date());
   if (v.dataFinal >= hoje) return 0;
   const diasAtraso = Math.max(0, days(v.dataFinal, hoje));
-  const taxa = Math.max(0, Number(db?.settings?.taxaAtrasoDiario || 0));
+  const cliente = clienteById(v.clienteId) || clienteByName(v.cliente) || {};
+  const taxa = Math.max(0, Number(v.taxaAtrasoDiario ?? cliente.taxaAtrasoDiario ?? 0));
   if (!diasAtraso || !taxa) return 0;
-  const tipo = db?.settings?.tipoTaxaAtrasoDiario === 'reais' ? 'reais' : 'percentual';
+  const tipoOriginal = v.tipoTaxaAtrasoDiario ?? cliente.tipoTaxaAtrasoDiario;
+  const tipo = tipoOriginal === 'reais' ? 'reais' : 'percentual';
   if (tipo === 'reais') return diasAtraso * taxa;
   const base = Math.max(0, originalLoanValue(v) - Number(v.principalRecebido || 0));
   return base * (taxa / 100) * diasAtraso;
 }
 
-function lateFeeLabel() {
-  const taxa = Math.max(0, Number(db?.settings?.taxaAtrasoDiario || 0));
-  const tipo = db?.settings?.tipoTaxaAtrasoDiario === 'reais' ? 'reais' : 'percentual';
+function lateFeeLabel(v = null) {
+  const cliente = v ? (clienteById(v.clienteId) || clienteByName(v.cliente) || {}) : {};
+  const taxa = Math.max(0, Number(v?.taxaAtrasoDiario ?? cliente.taxaAtrasoDiario ?? 0));
+  const tipo = (v?.tipoTaxaAtrasoDiario ?? cliente.tipoTaxaAtrasoDiario) === 'reais' ? 'reais' : 'percentual';
   if (tipo === 'reais') return money(taxa) + ' / DIA';
   return String(taxa).replace('.', ',') + '% / DIA';
 }
@@ -492,6 +503,102 @@ function switchScreen(id) {
   renderAll();
 }
 
+
+
+function getLoanFormState() {
+  return JSON.stringify({
+    id: editLoanId || '',
+    cliente: $('loanCliente')?.value || '',
+    valor: $('loanValor')?.value || '',
+    juros: $('loanJuros')?.value || '',
+    tipoTaxaAtrasoDiario: $('loanTipoTaxaDiaria')?.value || 'percentual',
+    taxaAtrasoDiario: $('loanTaxaDiaria')?.value || '',
+    dataInicial: $('loanInicio')?.value || '',
+    dataFinal: $('loanFinal')?.value || '',
+    observacao: $('loanObs')?.value || ''
+  });
+}
+
+function markLoanFormClean() {
+  loanFormSnapshot = getLoanFormState();
+}
+
+function loanFormHasChanges() {
+  return getLoanFormState() !== loanFormSnapshot;
+}
+
+function ensureLoanUnsavedDialog() {
+  let dialog = document.getElementById('loanUnsavedDialog');
+  if (dialog) return dialog;
+  dialog = document.createElement('div');
+  dialog.id = 'loanUnsavedDialog';
+  dialog.className = 'client-unsaved-dialog d-none';
+  dialog.innerHTML = `
+    <div class="client-unsaved-backdrop"></div>
+    <div class="client-unsaved-card" role="alertdialog" aria-modal="true" aria-labelledby="loanUnsavedTitle">
+      <div class="client-unsaved-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+      <h3 id="loanUnsavedTitle">Alterações não salvas</h3>
+      <p>Você modificou os dados do vale. O que deseja fazer?</p>
+      <div class="client-unsaved-actions">
+        <button type="button" class="btn btn-outline-light" data-loan-action="continue">
+          <i class="bi bi-pencil-square"></i> Continuar editando
+        </button>
+        <button type="button" class="btn btn-outline-danger" data-loan-action="discard">
+          <i class="bi bi-trash3"></i> Descartar
+        </button>
+        <button type="button" class="btn btn-primary" data-loan-action="save">
+          <i class="bi bi-check2-circle"></i> Salvar e sair
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(dialog);
+  return dialog;
+}
+
+function askLoanUnsavedAction() {
+  return new Promise((resolve) => {
+    const dialog = ensureLoanUnsavedDialog();
+    const buttons = dialog.querySelectorAll('[data-loan-action]');
+    const finish = (action) => {
+      dialog.classList.add('d-none');
+      buttons.forEach(btn => btn.onclick = null);
+      document.removeEventListener('keydown', onKey);
+      resolve(action);
+    };
+    const onKey = (event) => {
+      if (event.key === 'Escape') finish('continue');
+    };
+    buttons.forEach(btn => btn.onclick = () => finish(btn.dataset.loanAction));
+    document.addEventListener('keydown', onKey);
+    dialog.classList.remove('d-none');
+    setTimeout(() => dialog.querySelector('[data-loan-action="continue"]')?.focus(), 30);
+  });
+}
+
+function updateLoanDailyRateUI() {
+  const tipo = $('loanTipoTaxaDiaria')?.value === 'reais' ? 'reais' : 'percentual';
+  const prefix = $('loanTaxaDiariaPrefix');
+  if (prefix) prefix.textContent = tipo === 'reais' ? 'R$' : '%';
+  const input = $('loanTaxaDiaria');
+  if (input) input.placeholder = tipo === 'reais' ? '0,00' : '0%';
+}
+
+function updateClientDailyRateUI() {
+  const tipo = $('cliTipoTaxaDiaria')?.value === 'reais' ? 'reais' : 'percentual';
+  const prefix = $('cliTaxaDiariaPrefix');
+  if (prefix) prefix.textContent = tipo === 'reais' ? 'R$' : '%';
+  const input = $('cliTaxaDiaria');
+  if (input) input.placeholder = tipo === 'reais' ? '0,00' : '0%';
+}
+
+function applyClientRatesToLoan() {
+  // As taxas pertencem ao vale atual e não ao cadastro do cliente.
+}
+
+function syncLoanRatesFromSelectedClient() {
+  // Mantido por compatibilidade; não altera as taxas do formulário.
+}
+
 /**
  * Limpa o formulário de novo VALLE e coloca as datas padrão: hoje e +30 dias.
  */
@@ -500,8 +607,11 @@ function clearLoan() {
   if ($('saveOnlyBtn')) $('saveOnlyBtn').innerHTML = '💾 Salvar';
   $('loanCliente').value = '';
   $('loanValor').value = '';
-  const jurosPadrao=Number(window.VALLE_SERVICE_FINANCIAL_SETTINGS?.interest_percent ?? db.settings.percentualJuros50 ?? 30);
+  const jurosPadrao = 30;
   $('loanJuros').value = String(jurosPadrao).replace('.', ',') + '%';
+  if ($('loanTipoTaxaDiaria')) $('loanTipoTaxaDiaria').value = 'percentual';
+  if ($('loanTaxaDiaria')) $('loanTaxaDiaria').value = '0%';
+  updateLoanDailyRateUI();
   $('loanTotal').value = '';
   $('loanObs').value = '';
   const hoje = new Date();
@@ -510,6 +620,7 @@ function clearLoan() {
   fim.setDate(fim.getDate() + 30);
   $('loanFinal').value = inputDate(fim);
   calcLoan();
+  markLoanFormClean();
 }
 
 /**
@@ -539,6 +650,8 @@ function currentLoan() {
     cpf: c?.cpf || '',
     valor: moneyNum($('loanValor').value),
     juros: taxaNum($('loanJuros').value),
+    tipoTaxaAtrasoDiario: $('loanTipoTaxaDiaria')?.value === 'reais' ? 'reais' : 'percentual',
+    taxaAtrasoDiario: $('loanTipoTaxaDiaria')?.value === 'reais' ? moneyNum($('loanTaxaDiaria')?.value || '0') : taxaNum($('loanTaxaDiaria')?.value || '0'),
     total: moneyNum($('loanTotal').value),
     valorOriginal: old?.valorOriginal ?? moneyNum($('loanValor').value),
     totalOriginal: old?.totalOriginal ?? moneyNum($('loanTotal').value),
@@ -620,9 +733,40 @@ function saveOnly() { const v = saveLoan(); if (v) { clearLoan(); switchScreen('
 /**
  * Cancela o cadastro/edição do vale, limpa o formulário e volta para o histórico.
  */
-function cancelLoan() {
-  clearLoan();
-  switchScreen('historico');
+let loanLeavePromptOpen = false;
+
+/**
+ * Confirma a saída da aba Novo VALLE quando há dados alterados.
+ * O destino só é aberto depois que o usuário salva ou descarta as alterações.
+ */
+async function confirmLoanBeforeLeave(afterLeave) {
+  if (loanLeavePromptOpen) return false;
+
+  if (!loanFormHasChanges()) {
+    afterLeave?.();
+    return true;
+  }
+
+  loanLeavePromptOpen = true;
+  try {
+    const action = await askLoanUnsavedAction();
+    if (action === 'continue') return false;
+
+    if (action === 'save') {
+      const saved = saveLoan();
+      if (!saved) return false;
+    }
+
+    clearLoan();
+    afterLeave?.();
+    return true;
+  } finally {
+    loanLeavePromptOpen = false;
+  }
+}
+
+async function cancelLoan() {
+  await confirmLoanBeforeLeave(() => switchScreen('historico'));
 }
 
 /**
@@ -634,12 +778,155 @@ function openNewLoan() {
   switchScreen('emprestimo');
 }
 
+function getClientBootstrapModal() {
+  const modal = $('clientModal');
+  if (!modal || !window.bootstrap?.Modal) return null;
+  return bootstrap.Modal.getOrCreateInstance(modal, {
+    backdrop: 'static',
+    keyboard: false,
+    focus: true
+  });
+}
+
+
+function getClientFormState() {
+  return JSON.stringify({
+    id: $('clienteId')?.value || '',
+    nome: $('cliNome')?.value || '',
+    telefone: $('cliTelefone')?.value || '',
+    cpf: $('cliCpf')?.value || '',
+    obs: $('cliObs')?.value || ''
+  });
+}
+
+function markClientFormClean() {
+  clientFormSnapshot = getClientFormState();
+}
+
+function clientFormHasChanges() {
+  return getClientFormState() !== clientFormSnapshot;
+}
+
+function ensureClientUnsavedDialog() {
+  let dialog = document.getElementById('clientUnsavedDialog');
+  if (dialog) return dialog;
+  dialog = document.createElement('div');
+  dialog.id = 'clientUnsavedDialog';
+  dialog.className = 'client-unsaved-dialog d-none';
+  dialog.innerHTML = `
+    <div class="client-unsaved-backdrop"></div>
+    <div class="client-unsaved-card" role="alertdialog" aria-modal="true" aria-labelledby="clientUnsavedTitle">
+      <div class="client-unsaved-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+      <h3 id="clientUnsavedTitle">Alterações não salvas</h3>
+      <p>Você modificou o cadastro. O que deseja fazer?</p>
+      <div class="client-unsaved-actions">
+        <button type="button" class="btn btn-outline-light" data-client-action="continue">
+          <i class="bi bi-pencil-square"></i> Continuar editando
+        </button>
+        <button type="button" class="btn btn-outline-danger" data-client-action="discard">
+          <i class="bi bi-trash3"></i> Descartar
+        </button>
+        <button type="button" class="btn btn-primary" data-client-action="save">
+          <i class="bi bi-check2-circle"></i> Salvar e sair
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(dialog);
+  return dialog;
+}
+
+function askClientUnsavedAction() {
+  return new Promise((resolve) => {
+    const dialog = ensureClientUnsavedDialog();
+    const buttons = dialog.querySelectorAll('[data-client-action]');
+    const finish = (action) => {
+      dialog.classList.add('d-none');
+      buttons.forEach(btn => btn.onclick = null);
+      document.removeEventListener('keydown', onKey);
+      resolve(action);
+    };
+    const onKey = (event) => {
+      if (event.key === 'Escape') finish('continue');
+    };
+    buttons.forEach(btn => btn.onclick = () => finish(btn.dataset.clientAction));
+    document.addEventListener('keydown', onKey);
+    dialog.classList.remove('d-none');
+    setTimeout(() => dialog.querySelector('[data-client-action="continue"]')?.focus(), 30);
+  });
+}
+
+async function cancelClientModal() {
+  if (!clientFormHasChanges()) {
+    closeClientModal(true);
+    return;
+  }
+  const action = await askClientUnsavedAction();
+  if (action === 'continue') return;
+  if (action === 'save') {
+    saveClient();
+    return;
+  }
+  clientModalForceClose = true;
+  closeClientModal(true);
+}
+
+function updateClientModalHeading(editing = false) {
+  const title = $('clientModalTitle');
+  const subtitle = document.querySelector('#clientModal .client-modal-subtitle');
+  if (title) title.textContent = editing ? 'Editar cliente' : 'Cadastro de cliente';
+  if (subtitle) subtitle.textContent = editing
+    ? 'Atualize os dados do cliente selecionado.'
+    : 'Preencha os dados para cadastrar um novo cliente.';
+}
+
+function openClientModal(editing = false) {
+  const modal = $('clientModal');
+  if (!modal) return;
+  if (!editing) clearClient(false);
+  updateClientModalHeading(editing);
+
+  const bsModal = getClientBootstrapModal();
+  if (bsModal) bsModal.show();
+  else {
+    modal.classList.add('show');
+    modal.style.display = 'block';
+    modal.removeAttribute('aria-hidden');
+  }
+
+  modal.addEventListener('shown.bs.modal', () => {
+    markClientFormClean();
+    $('cliNome')?.focus();
+  }, { once: true });
+  setTimeout(() => {
+    markClientFormClean();
+    $('cliNome')?.focus();
+  }, 180);
+}
+
+function closeClientModal(clear = true) {
+  const modal = $('clientModal');
+  if (!modal) return;
+  clientModalForceClose = true;
+  const bsModal = getClientBootstrapModal();
+  if (bsModal) bsModal.hide();
+  else {
+    modal.classList.remove('show');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+  }
+  if (clear) clearClient(false);
+  clientModalForceClose = false;
+}
+
 /**
  * Limpa o formulário de cadastro/edição de cliente.
  */
-function clearClient() {
+function clearClient(closeModal = false) {
   ['clienteId', 'cliNome', 'cliTelefone', 'cliCpf', 'cliObs'].forEach(id => $(id).value = '');
-  if ($('saveClientBtn')) $('saveClientBtn').textContent = 'SALVAR';
+  if ($('saveClientBtn')) $('saveClientBtn').innerHTML = '<i class="bi bi-check2-circle"></i><span>Salvar</span>';
+  updateClientModalHeading(false);
+  markClientFormClean();
+  if (closeModal) closeClientModal(false);
 }
 
 
@@ -669,9 +956,9 @@ function saveClient() {
     obs: upper($('cliObs').value),
     vip: !!(clienteById(id)?.vip)
   };
-  if (!c.nome) { toast('DIGITE O NOME'); return; }
+  if (!c.nome) { toast('DIGITE O NOME'); return false; }
   const duplicated = db.clientes.find(x => x.nome === c.nome && x.id !== id);
-  if (duplicated) { toast('JÁ EXISTE CLIENTE COM ESSE NOME'); return; }
+  if (duplicated) { toast('JÁ EXISTE CLIENTE COM ESSE NOME'); return false; }
   const idx = db.clientes.findIndex(x => x.id === id);
   if (idx >= 0) {
     const oldName = db.clientes[idx].nome;
@@ -689,6 +976,8 @@ function saveClient() {
   save();
   clearClient();
   renderAll();
+  closeClientModal(false);
+  return true;
 }
 
 
@@ -704,8 +993,8 @@ function editClient(id) {
   $('cliTelefone').value = c.telefone || '';
   $('cliCpf').value = c.cpf || '';
   $('cliObs').value = c.obs || '';
-  if ($('saveClientBtn')) $('saveClientBtn').textContent = 'ATUALIZAR';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if ($('saveClientBtn')) $('saveClientBtn').innerHTML = '<i class="bi bi-check2-circle"></i><span>Atualizar</span>';
+  openClientModal(true);
 }
 
 
@@ -714,7 +1003,10 @@ function editClient(id) {
  */
 function useClient(id) {
   const c = clienteById(id);
-  if (c) $('loanCliente').value = c.nome;
+  if (c) {
+    $('loanCliente').value = c.nome;
+    applyClientRatesToLoan(c);
+  }
   switchScreen('emprestimo');
 }
 
@@ -744,11 +1036,15 @@ function editLoan(id) {
   $('loanCliente').value = v.cliente;
   $('loanValor').value = money(v.valor);
   $('loanJuros').value = String(v.juros).replace('.', ',') + '%';
+  if ($('loanTipoTaxaDiaria')) $('loanTipoTaxaDiaria').value = v.tipoTaxaAtrasoDiario === 'reais' ? 'reais' : 'percentual';
+  if ($('loanTaxaDiaria')) $('loanTaxaDiaria').value = v.tipoTaxaAtrasoDiario === 'reais' ? money(Number(v.taxaAtrasoDiario || 0)) : String(Number(v.taxaAtrasoDiario || 0)).replace('.', ',') + '%';
+  updateLoanDailyRateUI();
   $('loanTotal').value = money(v.total);
   $('loanInicio').value = v.dataInicial;
   $('loanFinal').value = v.dataFinal;
   $('loanObs').value = v.observacao || '';
   calcLoan();
+  markLoanFormClean();
   switchScreen('emprestimo');
   toast('EDITANDO VALE');
 }
@@ -857,7 +1153,13 @@ function originalLoanTotal(v) {
 function closeReceiveModal() {
   closePartialPaymentModal();
   const modal = $('receiveModal');
-  if (modal) modal.classList.remove('show');
+  if (!modal) return;
+  if (window.bootstrap?.Modal) {
+    window.bootstrap.Modal.getOrCreateInstance(modal).hide();
+  } else {
+    modal.classList.remove('show');
+    modal.style.display = 'none';
+  }
 }
 
 function openReceiveModal(id, editing = false) {
@@ -865,85 +1167,117 @@ function openReceiveModal(id, editing = false) {
   if (!v) return;
   if (Number(v.valorOriginal || 0) <= 0) v.valorOriginal = originalLoanValue(v);
   if (Number(v.totalOriginal || 0) <= 0) v.totalOriginal = originalLoanTotal(v);
-  const juros = loanInterest(v);
+
   const modal = $('receiveModal');
   const body = $('receiveModalBody');
-  if (!modal || !body) {
-    v.status = 'PAGO';
-    save();
-    renderAll();
-    return;
-  }
+  if (!modal || !body) return;
+
+  // O Bootstrap precisa do modal diretamente no body. Isso evita que containers
+  // com transform/overflow coloquem o backdrop por cima ou cortem o conteúdo.
+  if (modal.parentElement !== document.body) document.body.appendChild(modal);
 
   const numero = String(v.numero || '').padStart(4, '0');
+  const cliente = h(v.cliente);
+  const juros = loanInterest(v);
 
   body.innerHTML = `
-    <div class="receive-theme-head">
-      <div class="receive-title-area">
-        <small>AÇÕES DE COBRANÇA</small>
+    <div class="modal-header px-3 px-md-4 py-3">
+      <div class="d-flex align-items-center gap-3 flex-grow-1 min-w-0">
+        <div class="receive-bs-icon flex-shrink-0" aria-hidden="true">
+          <i class="bi bi-cash-coin"></i>
+        </div>
+        <div class="min-w-0 flex-grow-1">
+          <div class="text-secondary small fw-bold mb-1">AÇÕES DE COBRANÇA</div>
+          ${editing
+            ? `<label class="visually-hidden" for="receiveEditCliente">Cliente</label><input id="receiveEditCliente" class="form-control form-control-lg fw-bold" value="${cliente}" autocomplete="off">`
+            : `<h2 id="receiveModalTitle" class="h4 fw-bold mb-0 text-break">${cliente}</h2>`}
+          <p class="text-secondary small mb-0 mt-1 d-none d-sm-block">Gerencie o recebimento e o status deste vale.</p>
+        </div>
+      </div>
+      <div class="receive-bs-number text-center flex-shrink-0 ms-2">
+        <small class="d-block text-secondary fw-bold">Nº DO VALE</small>
+        <strong class="fs-5">#${numero}</strong>
+      </div>
+    </div>
+
+    <div class="modal-body px-3 px-md-4 py-3 py-md-4">
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="receive-bs-info h-100">
+            <div class="receive-bs-label"><i class="bi bi-calendar-event"></i><span>Vencimento</span></div>
+            ${editing
+              ? `<input id="receiveEditDataFinal" class="form-control" type="date" value="${h(v.dataFinal || '')}">`
+              : `<strong class="receive-bs-value">${brDate(v.dataFinal)}</strong>`}
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="receive-bs-info h-100">
+            <div class="receive-bs-label"><i class="bi bi-cash-stack"></i><span>Valor do vale</span></div>
+            ${editing
+              ? `<input id="receiveEditValor" class="form-control" type="text" inputmode="decimal" value="${money(originalLoanValue(v))}" oninput="maskMoneyInput(this);calcReceiveModalEdit()" onblur="formatMoneyInput(this);calcReceiveModalEdit()">`
+              : `<strong class="receive-bs-value">${money(originalLoanValue(v))}</strong>`}
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="receive-bs-info h-100">
+            <div class="receive-bs-label"><i class="bi bi-percent"></i><span>Porcentagem</span></div>
+            ${editing
+              ? `<input id="receiveEditJuros" class="form-control" type="text" inputmode="decimal" value="${String(v.juros || 0).replace('.', ',')}%" oninput="maskPercentInput(this);calcReceiveModalEdit()" onblur="formatPercentInput(this);calcReceiveModalEdit()">`
+              : `<strong class="receive-bs-value">${String(v.juros || 0).replace('.', ',')}%</strong>`}
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="receive-bs-info h-100">
+            <div class="receive-bs-label"><i class="bi bi-graph-up-arrow"></i><span>Juros a receber</span></div>
+            <strong id="receiveEditJurosReceber" class="receive-bs-value">${money(juros)}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert alert-info d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 mb-3 py-3 px-3 px-md-4" role="status">
+        <span class="fw-bold"><i class="bi bi-wallet2 me-2"></i>TOTAL A RECEBER</span>
+        <strong id="receiveEditTotal" class="fs-3 lh-1 text-nowrap">${money(loanTotalBalance(v))}</strong>
+      </div>
+
+      <div class="receive-bs-observation p-3 p-md-4">
+        <div class="receive-bs-label mb-2"><i class="bi bi-card-text"></i><span>Observação do vale</span></div>
         ${editing
-          ? `<input id="receiveEditCliente" class="receive-edit-title" value="${h(v.cliente)}" autocomplete="off">`
-          : `<h2>${h(v.cliente)}</h2>`}
-      </div>
-      <div class="receive-vale-id">
-        <span>Nº DO VALE</span>
-        <strong>#${numero}</strong>
+          ? `<textarea id="receiveEditObs" class="form-control" rows="3" placeholder="Observação do vale...">${h(v.observacao || '')}</textarea>`
+          : `<p class="mb-0 text-break">${h(v.observacao || 'NENHUMA').replace(/\n/g, '<br>')}</p>`}
       </div>
     </div>
 
-    <div class="receive-summary-grid">
-      <div class="receive-info-card">
-        <span>VENCIMENTO</span>
-        ${editing
-          ? `<input id="receiveEditDataFinal" type="date" value="${h(v.dataFinal || '')}">`
-          : `<strong>${brDate(v.dataFinal)}</strong>`}
+    <div class="modal-footer d-block px-3 px-md-4 py-3">
+      <div id="receiveActionsGrid" class="row row-cols-2 row-cols-lg-4 g-2 mb-3">
+        <div class="col"><button type="button" class="btn btn-outline-success w-100" onclick="receiveQuitado('${v.id}')"><i class="bi bi-check-circle"></i><span>Quitado</span></button></div>
+        <div class="col"><button type="button" class="btn btn-outline-secondary w-100" onclick="receiveSoJuros('${v.id}')"><i class="bi bi-percent"></i><span>Só juros</span></button></div>
+        <div class="col"><button type="button" class="btn btn-outline-warning w-100" onclick="showReceiveParcialField('${v.id}')"><i class="bi bi-pie-chart"></i><span>Pg. parcial</span></button></div>
+        <div class="col"><button type="button" class="btn btn-outline-danger w-100" onclick="receiveNaoPagou('${v.id}')"><i class="bi bi-x-circle"></i><span>Não pagou</span></button></div>
       </div>
-      <div class="receive-info-card">
-        <span>VALOR DO VALLE</span>
-        ${editing
-          ? `<input id="receiveEditValor" type="text" inputmode="decimal" value="${money(originalLoanValue(v))}" oninput="maskMoneyInput(this);calcReceiveModalEdit()" onblur="formatMoneyInput(this);calcReceiveModalEdit()">`
-          : `<strong>${money(originalLoanValue(v))}</strong>`}
+
+      <div class="row g-2">
+        <div class="col-6"><button id="receiveRemoveBtn" type="button" class="btn btn-outline-danger w-100" onclick="receiveRemover('${v.id}')"><i class="bi bi-trash3"></i><span>Excluir</span></button></div>
+        <div class="col-6"><button id="receiveEditBtn" type="button" class="btn btn-outline-primary w-100" onclick="${editing ? `saveReceiveModalEdit('${v.id}')` : `openReceiveModal('${v.id}', true)`}"><i class="bi ${editing ? 'bi-floppy' : 'bi-pencil-square'}"></i><span>${editing ? 'Salvar' : 'Editar'}</span></button></div>
+        
+        
       </div>
-      <div class="receive-info-card">
-        <span>PORCENTAGEM</span>
-        ${editing
-          ? `<input id="receiveEditJuros" type="text" inputmode="decimal" value="${String(v.juros || 0).replace('.', ',')}%" oninput="maskPercentInput(this);calcReceiveModalEdit()" onblur="formatPercentInput(this);calcReceiveModalEdit()">`
-          : `<strong>${String(v.juros || 0).replace('.', ',')}%</strong>`}
-      </div>
-      <div class="receive-info-card">
-        <span>JUROS A RECEBER</span>
-        ${editing
-          ? `<strong id="receiveEditJurosReceber">${money(juros)}</strong>`
-          : `<strong>${money(juros)}</strong>`}
-      </div>
-    </div>
+    </div>`
 
-    <div class="receive-total-card">
-      <span>TOTAL A RECEBER</span>
-      <strong id="receiveEditTotal">${money(loanTotalBalance(v))}</strong>
-    </div>
+  // Elimina instâncias/backdrops antigos deixados por tentativas anteriores.
+  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+  document.body.classList.remove('modal-open');
+  document.body.style.removeProperty('padding-right');
+  document.body.style.removeProperty('overflow');
 
-    <div class="receive-obs-card">
-      <span>OBSERVAÇÃO DO VALE</span>
-      ${editing
-        ? `<textarea id="receiveEditObs" rows="4" placeholder="OBSERVAÇÃO DO VALE...">${h(v.observacao || '')}</textarea>`
-        : `<p>${h(v.observacao || 'NENHUMA').replace(/\n/g, '<br>')}</p>`}
-    </div>
-
-    <div id="receiveActionsGrid" class="receive-actions-grid">
-      <button class="btn success" onclick="receiveQuitado('${v.id}')">QUITADO</button>
-      <button class="btn primary" onclick="receiveSoJuros('${v.id}')">SÓ JUROS</button>
-      <button class="btn warn" onclick="showReceiveParcialField('${v.id}')">PG. PARCIAL</button>
-      <button class="btn danger" onclick="receiveNaoPagou('${v.id}')">NÃO PAGOU</button>
-    </div>
-
-
-    <div class="receive-bottom-actions">
-      <button id="receiveEditBtn" class="btn light receive-edit-inline" onclick="${editing ? `saveReceiveModalEdit('${v.id}')` : `openReceiveModal('${v.id}', true)`}">${editing ? 'SALVAR' : 'EDITAR'}</button>
-      <button id="receiveCloseBtn" class="btn light receive-close-inline" onclick="closeReceiveModal()">FECHAR</button>
-    </div>
-    <button id="receiveRemoveBtn" class="btn danger receive-full receive-remove" onclick="receiveRemover('${v.id}')">REMOVER REGISTRO</button>`;
-  modal.classList.add('show');
+  if (window.bootstrap?.Modal) {
+    const old = window.bootstrap.Modal.getInstance(modal);
+    if (old) old.dispose();
+    const instance = new window.bootstrap.Modal(modal, { backdrop: 'static', keyboard: false, focus: true });
+    instance.show();
+  } else {
+    modal.classList.add('show');
+    modal.style.display = 'block';
+  }
 }
 
 function calcReceiveModalEdit() {
@@ -1779,6 +2113,10 @@ function renderNotifications() {
     $('notifCount').textContent = notificacoes.length > 99 ? '99+' : notificacoes.length;
     $('notifCount').style.display = notificacoes.length ? 'inline-flex' : 'none';
   }
+  if ($('notifHeaderCount')) {
+    $('notifHeaderCount').textContent = notificacoes.length > 99 ? '99+' : notificacoes.length;
+    $('notifHeaderCount').style.display = notificacoes.length ? 'inline-flex' : 'none';
+  }
 
   if (!notificacoes.length) {
     $('notificacoesContainer').innerHTML = `
@@ -1834,10 +2172,10 @@ function renderNotifications() {
         <p>${h(ultimaObs)}</p>
       </div>
 
-      <div class="notif-line-actions">
-        <button class="whats" onclick="openWhatsLoan('${v.id}')">💬 WHATSAPP</button>
-        <button class="pdf" onclick="downloadLoanPdf('${v.id}')">📄 PDF</button>
-        <button class="receber" onclick="togglePaid('${v.id}')">💳 RECEBER</button>
+      <div class="notif-line-actions btn-group" role="group" aria-label="Ações da notificação">
+        <button type="button" class="btn btn-success whats" onclick="openWhatsLoan('${v.id}')"><i class="bi bi-whatsapp"></i><span>WHATSAPP</span></button>
+        <button type="button" class="btn btn-danger pdf" onclick="downloadLoanPdf('${v.id}')"><i class="bi bi-file-earmark-pdf-fill"></i><span>PDF</span></button>
+        <button type="button" class="btn btn-primary receber" onclick="togglePaid('${v.id}')"><i class="bi bi-cash-coin"></i><span>RECEBER</span></button>
       </div>
     </div>`;
   }).join('');
@@ -2428,11 +2766,43 @@ async function wipe() {
  */
 function init() {
   db = normalizeDb(db); save(); applyTheme(); clearLoan(); renderAll();
-  document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
-    if (b.dataset.screen === 'emprestimo') openNewLoan();
-    else if (b.dataset.screen === 'clientes') { clearClient(); switchScreen('clientes'); }
-    else switchScreen(b.dataset.screen);
+  document.querySelectorAll('.tab').forEach(b => b.onclick = async (event) => {
+    const targetScreen = b.dataset.screen;
+    const activeScreen = document.querySelector('.screen.active')?.id;
+
+    // Ao sair do Novo VALLE por qualquer aba, protege os dados não salvos.
+    if (activeScreen === 'emprestimo' && targetScreen !== 'emprestimo') {
+      event?.preventDefault();
+      await confirmLoanBeforeLeave(() => {
+        if (targetScreen === 'clientes') {
+          clearClient();
+          switchScreen('clientes');
+        } else {
+          switchScreen(targetScreen);
+        }
+      });
+      return;
+    }
+
+    if (targetScreen === 'emprestimo') openNewLoan();
+    else if (targetScreen === 'clientes') { clearClient(); switchScreen('clientes'); }
+    else switchScreen(targetScreen);
   });
+
+  // Clicar fora do card Novo VALLE também é tratado como tentativa de saída.
+  document.addEventListener('click', async event => {
+    if (document.querySelector('.screen.active')?.id !== 'emprestimo') return;
+    if (!loanFormHasChanges() || loanLeavePromptOpen) return;
+
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (target.closest('#emprestimo .loan-bootstrap-card')) return;
+    if (target.closest('.tab, #loanUnsavedDialog, .client-unsaved-dialog')) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    await confirmLoanBeforeLeave(() => switchScreen('historico'));
+  }, true);
   if ($('themeBtn')) $('themeBtn').onclick = () => { window.ValleUserTheme?.toggle(); };
   if ($('configCapitalInvestido')) {
     $('configCapitalInvestido').onfocus = e => {
@@ -2467,6 +2837,15 @@ function init() {
   $('loanValor').onblur = e => { e.target.value = money(moneyNum(e.target.value)); calcLoan(); };
   $('loanJuros').oninput = calcLoan;
   $('loanJuros').onblur = e => { e.target.value = String(taxaNum(e.target.value)).replace('.', ',') + '%'; calcLoan(); };
+  if ($('loanTipoTaxaDiaria')) $('loanTipoTaxaDiaria').onchange = () => {
+    const tipo = $('loanTipoTaxaDiaria').value === 'reais' ? 'reais' : 'percentual';
+    $('loanTaxaDiaria').value = tipo === 'reais' ? money(moneyNum($('loanTaxaDiaria').value)) : String(taxaNum($('loanTaxaDiaria').value)).replace('.', ',') + '%';
+    updateLoanDailyRateUI();
+  };
+  if ($('loanTaxaDiaria')) $('loanTaxaDiaria').onblur = e => {
+    const tipo = $('loanTipoTaxaDiaria')?.value === 'reais' ? 'reais' : 'percentual';
+    e.target.value = tipo === 'reais' ? money(moneyNum(e.target.value)) : String(taxaNum(e.target.value)).replace('.', ',') + '%';
+  };
   $('loanInicio').onchange = () => { const d = new Date($('loanInicio').value + 'T00:00:00'); if (!isNaN(d)) { d.setDate(d.getDate() + 30); $('loanFinal').value = inputDate(d); } calcLoan(); };
   $('loanFinal').onchange = calcLoan;
   ['loanCliente', 'loanObs', 'cliNome', 'cliObs'].forEach(id => $(id).oninput = e => { const p = e.target.selectionStart; e.target.value = String(e.target.value || '').toUpperCase(); try { e.target.setSelectionRange(p, p); } catch (_) {} });
@@ -2478,7 +2857,17 @@ function init() {
   if ($('clearLoanBtn')) $('clearLoanBtn').onclick = clearLoan;
   if ($('cancelLoanBtn')) $('cancelLoanBtn').onclick = cancelLoan;
   $('saveClientBtn').onclick = saveClient;
-  $('clearClientBtn').onclick = clearClient;
+  $('clearClientBtn').onclick = cancelClientModal;
+  if ($('openClientModalBtn')) $('openClientModalBtn').onclick = () => openClientModal(false);
+  if ($('clientModal')) {
+    $('clientModal').addEventListener('hide.bs.modal', (event) => {
+      if (!clientModalForceClose && clientFormHasChanges()) event.preventDefault();
+    });
+    $('clientModal').addEventListener('hidden.bs.modal', () => {
+      clearClient(false);
+      clientModalForceClose = false;
+    });
+  }
   $('searchClientes').oninput = renderClients;
   $('searchHistorico').oninput = renderHistory;
   if ($('filtroHistoricoStatus')) $('filtroHistoricoStatus').onchange = renderHistory;
@@ -2552,6 +2941,7 @@ function renderV3Card(v, options = {}) {
   const c = clienteById(v.clienteId) || clienteByName(v.cliente) || {};
   const num = String(v.numero || '').padStart(4,'0');
   const tel = v.telefone || c.telefone || '';
+  const clienteInicial = String(v.cliente || '?').trim().charAt(0).toUpperCase() || '?';
   const statusName = info.key === 'danger' ? 'ATRASADO' : info.key === 'today' ? 'HOJE' : 'PRÓXIMO';
   const statusDetail = info.key === 'danger'
     ? `${Math.abs(info.dias)} dia${Math.abs(info.dias) === 1 ? '' : 's'} de atraso`
@@ -2599,6 +2989,74 @@ function renderV3Card(v, options = {}) {
     </div>
   </div>`;
 }
+function renderNotificationBootstrapCard(v) {
+  const info = statusInfo(v);
+  const c = clienteById(v.clienteId) || clienteByName(v.cliente) || {};
+  const num = String(v.numero || '').padStart(4,'0');
+  const tel = v.telefone || c.telefone || '';
+  const nomeCliente = String(v.cliente || c.nome || '').trim();
+  const clienteInicial = (nomeCliente.charAt(0) || '?').toUpperCase();
+  const statusName = info.key === 'danger' ? 'ATRASADO' : info.key === 'today' ? 'VENCE HOJE' : 'PRÓXIMO';
+  const statusClass = info.key === 'danger' ? 'danger' : info.key === 'today' ? 'warning' : 'primary';
+  const statusDetail = info.key === 'danger'
+    ? `${Math.abs(info.dias)} dia${Math.abs(info.dias) === 1 ? '' : 's'} de atraso`
+    : info.key === 'today'
+      ? 'Vencimento hoje'
+      : `Vence em ${info.dias} dia${info.dias === 1 ? '' : 's'}`;
+
+  return `<article class="card notification-bootstrap-item border-${statusClass}">
+    <div class="card-body p-3 p-md-4">
+      <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+        <div class="d-flex align-items-start gap-3 min-w-0 notification-client-wrap">
+          <div class="notification-client-icon" aria-label="Inicial do cliente">${h(clienteInicial)}</div>
+          <div class="min-w-0 notification-client-text">
+            <h3 class="h5 mb-1 notification-client-name">${h(v.cliente)}</h3>
+            <p class="mb-0 text-secondary notification-client-phone"><i class="bi bi-telephone-fill me-1"></i>${h(tel || 'SEM TELEFONE')}</p>
+          </div>
+        </div>
+        <span class="badge rounded-pill text-bg-${statusClass} notification-status-badge">${h(statusName)}</span>
+      </div>
+
+      <div class="alert notification-status-alert mb-3 py-2 px-3" role="status">
+        <i class="bi bi-clock-history me-2"></i>${h(statusDetail)}
+      </div>
+
+      <div class="row g-3 notification-data-grid">
+        <div class="col-6 col-lg-3">
+          <div class="notification-data-box h-100">
+            <small class="text-secondary d-block mb-1"><i class="bi bi-receipt me-1"></i>Nº DO VALE</small>
+            <strong>#${h(num)}</strong>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="notification-data-box h-100">
+            <small class="text-secondary d-block mb-1"><i class="bi bi-calendar-event me-1"></i>VENCIMENTO</small>
+            <strong>${brDate(v.dataFinal)}</strong>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="notification-data-box h-100">
+            <small class="text-secondary d-block mb-1"><i class="bi bi-cash-stack me-1"></i>VALOR TOTAL</small>
+            <strong>${money(originalLoanTotal(v))}</strong>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="notification-data-box h-100">
+            <small class="text-secondary d-block mb-1"><i class="bi bi-wallet2 me-1"></i>EM ABERTO</small>
+            <strong>${money(loanTotalBalance(v))}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex flex-wrap justify-content-end gap-2 mt-3 pt-3 notification-bootstrap-actions">
+        <button type="button" class="btn btn-success" onclick="openWhatsLoan('${v.id}')"><i class="bi bi-whatsapp me-2"></i>WHATSAPP</button>
+        <button type="button" class="btn btn-danger" onclick="downloadLoanPdf('${v.id}')"><i class="bi bi-file-earmark-pdf-fill me-2"></i>PDF</button>
+        <button type="button" class="btn btn-primary" onclick="openReceiveModal('${v.id}')"><i class="bi bi-cash-coin me-2"></i>RECEBER</button>
+      </div>
+    </div>
+  </article>`;
+}
+
 function renderCobranca() {
   if (!$('cobrancaContainer')) return;
   const active = document.querySelector('.cobranca-filter.active')?.dataset.cobranca || 'todos';
@@ -2707,6 +3165,10 @@ renderNotifications = function(){
     $('notifCount').textContent = urgent.length > 99 ? '99+' : urgent.length;
     $('notifCount').style.display = urgent.length ? 'inline-flex' : 'none';
   }
+  if ($('notifHeaderCount')) {
+    $('notifHeaderCount').textContent = urgent.length > 99 ? '99+' : urgent.length;
+    $('notifHeaderCount').style.display = urgent.length ? 'inline-flex' : 'none';
+  }
 
   const filterCounts = {
     todos: urgent.length,
@@ -2720,11 +3182,18 @@ renderNotifications = function(){
     hoje: count => `${count} HOJE`,
     proximos: count => `${count} PRÓXIMO${count === 1 ? '' : 'S'}`
   };
+  const filterIcons = {
+    todos: 'bi-list-ul',
+    atrasados: 'bi-exclamation-octagon-fill',
+    hoje: 'bi-clock-fill',
+    proximos: 'bi-calendar-check-fill'
+  };
   document.querySelectorAll('.notif-filter-btn').forEach(btn => {
     const key = btn.dataset.notifFilter || 'todos';
     const count = filterCounts[key] || 0;
     btn.classList.toggle('active', key === notificationActiveFilter);
-    btn.textContent = (filterLabels[key] || (c => `${c}`))(count);
+    const label = (filterLabels[key] || (c => `${c}`))(count);
+    btn.innerHTML = `<i class="bi ${filterIcons[key] || 'bi-circle'}"></i><span>${label}</span>`;
   });
 
   const q = upper($('notificacoesSearch')?.value || '').trim();
@@ -2749,7 +3218,7 @@ renderNotifications = function(){
     : '✅ Nenhuma cobrança nesta categoria.';
 
   $('notificacoesContainer').innerHTML = list.length
-    ? list.map(v => renderV3Card(v)).join('')
+    ? list.map(v => renderNotificationBootstrapCard(v)).join('')
     : `<div class="empty-state">${emptyMsg}</div>`;
 };
 async function restoreAutoBackup() {
@@ -3377,4 +3846,257 @@ if (document.readyState === 'loading') {
   window.addEventListener('resize', update, { passive:true });
   window.addEventListener('orientationchange', () => setTimeout(update, 120), { passive:true });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', update, { passive:true });
+})();
+
+/* Navegação móvel: transforma a barra em carrossel e centraliza a aba selecionada. */
+(function setupMobileTabsCarousel() {
+  const centerTab = (tab, behavior = 'smooth') => {
+    if (!tab || window.innerWidth > 780) return;
+    const nav = tab.closest('.tabs');
+    if (!nav) return;
+
+    const targetLeft = tab.offsetLeft - ((nav.clientWidth - tab.offsetWidth) / 2);
+    const maxLeft = Math.max(0, nav.scrollWidth - nav.clientWidth);
+    nav.scrollTo({
+      left: Math.max(0, Math.min(targetLeft, maxLeft)),
+      behavior
+    });
+  };
+
+  const initialize = () => {
+    const nav = document.querySelector('.tabs');
+    if (!nav || nav.dataset.carouselReady === 'true') return;
+    nav.dataset.carouselReady = 'true';
+
+    nav.addEventListener('click', event => {
+      const tab = event.target.closest('.tab');
+      if (!tab || !nav.contains(tab)) return;
+      requestAnimationFrame(() => centerTab(tab));
+    });
+
+    window.addEventListener('resize', () => {
+      const activeTab = nav.querySelector('.tab.active');
+      requestAnimationFrame(() => centerTab(activeTab, 'auto'));
+    }, { passive: true });
+
+    requestAnimationFrame(() => centerTab(nav.querySelector('.tab.active'), 'auto'));
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize, { once: true });
+  } else {
+    initialize();
+  }
+})();
+
+/* Navegação mobile por gesto e barra inferior que oculta/aparece conforme a rolagem. */
+(function setupValleMobileGestures(){
+  const MOBILE_MAX = 780;
+  const SWIPE_MIN = 68;
+  const screensOrder = [
+    'dashboard',
+    'notificacoes',
+    'emprestimo',
+    'clientes',
+    'historico',
+    'relatorios',
+    'calendario'
+  ];
+
+  let startX = 0;
+  let startY = 0;
+  let startTime = 0;
+  let tracking = false;
+  let gestureBlocked = false;
+  let lastScrollY = Math.max(0, window.scrollY);
+  let scrollTicking = false;
+  let screenTransitioning = false;
+
+  const isMobile = () => window.innerWidth <= MOBILE_MAX;
+
+  const isInteractiveTarget = target => Boolean(target?.closest(
+    'input, textarea, select, button, a, label, [contenteditable="true"], ' +
+    '.tabs, .modal, .dialog, .app-modal, .sheet, .table-wrap, [data-no-swipe]'
+  ));
+
+  const activeScreenId = () => {
+    const active = document.querySelector('.screen.active');
+    return active?.id || document.querySelector('.tab.active')?.dataset.screen || 'dashboard';
+  };
+
+  const animateScreenChange = async (direction, changeScreen) => {
+    if (screenTransitioning) return;
+    screenTransitioning = true;
+
+    const root = document.documentElement;
+    const directionClass = direction === 'next' ? 'valle-slide-next' : 'valle-slide-prev';
+    root.classList.remove('valle-slide-next', 'valle-slide-prev');
+    root.classList.add(directionClass);
+
+    try {
+      /*
+       * O View Transitions API cria snapshots das duas telas e faz toda a
+       * animação na camada de composição da GPU. Isso evita a piscada e o
+       * travamento causado pelo renderAll() durante a troca de aba.
+       */
+      if (typeof document.startViewTransition === 'function') {
+        const transition = document.startViewTransition(() => {
+          changeScreen();
+        });
+
+        await transition.finished.catch(() => {});
+        return;
+      }
+
+      /* Fallback para navegadores sem View Transitions: a nova tela entra e a
+         antiga sai ao mesmo tempo, sem esperar uma animação terminar primeiro. */
+      const outgoing = document.querySelector('.screen.active');
+      const oldRect = outgoing?.getBoundingClientRect();
+      let ghost = null;
+
+      if (outgoing && oldRect && oldRect.width > 0 && oldRect.height > 0) {
+        ghost = outgoing.cloneNode(true);
+        ghost.removeAttribute('id');
+        ghost.setAttribute('aria-hidden', 'true');
+        Object.assign(ghost.style, {
+          position: 'fixed',
+          left: `${oldRect.left}px`,
+          top: `${oldRect.top}px`,
+          width: `${oldRect.width}px`,
+          height: `${oldRect.height}px`,
+          margin: '0',
+          zIndex: '99990',
+          pointerEvents: 'none',
+          overflow: 'hidden',
+          display: 'block',
+          contain: 'strict',
+          willChange: 'transform',
+          transform: 'translate3d(0,0,0)'
+        });
+        document.body.appendChild(ghost);
+      }
+
+      changeScreen();
+      await new Promise(resolve => requestAnimationFrame(resolve));
+
+      const incoming = document.querySelector('.screen.active');
+      const enterFrom = direction === 'next' ? '100%' : '-100%';
+      const exitTo = direction === 'next' ? '-30%' : '30%';
+      const options = {
+        duration: 420,
+        easing: 'cubic-bezier(.32,.72,0,1)',
+        fill: 'both'
+      };
+
+      const animations = [];
+      if (incoming?.animate) {
+        incoming.getAnimations().forEach(animation => animation.cancel());
+        animations.push(incoming.animate([
+          { transform: `translate3d(${enterFrom},0,0)` },
+          { transform: 'translate3d(0,0,0)' }
+        ], options).finished.catch(() => {}));
+      }
+      if (ghost?.animate) {
+        animations.push(ghost.animate([
+          { transform: 'translate3d(0,0,0)' },
+          { transform: `translate3d(${exitTo},0,0)` }
+        ], options).finished.catch(() => {}));
+      }
+
+      await Promise.all(animations);
+      ghost?.remove();
+    } finally {
+      root.classList.remove('valle-slide-next', 'valle-slide-prev');
+      screenTransitioning = false;
+    }
+  };
+
+  const moveScreen = direction => {
+    if (!isMobile()) return;
+    const current = activeScreenId();
+    const currentIndex = screensOrder.indexOf(current);
+    if (currentIndex < 0) return;
+
+    // Conforme solicitado: arrastar para a direita volta; para a esquerda avança.
+    const targetIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+    if (targetIndex < 0 || targetIndex >= screensOrder.length) return;
+
+    const targetId = screensOrder[targetIndex];
+    const targetTab = document.querySelector(`.tab[data-screen="${targetId}"]`);
+    if (!targetTab) return;
+
+    animateScreenChange(direction, () => targetTab.click());
+  };
+
+  const onTouchStart = event => {
+    if (!isMobile() || event.touches.length !== 1) return;
+    gestureBlocked = isInteractiveTarget(event.target);
+    if (gestureBlocked) return;
+    const touch = event.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    startTime = Date.now();
+    tracking = true;
+  };
+
+  const onTouchEnd = event => {
+    if (!tracking || gestureBlocked || !isMobile() || !event.changedTouches.length) {
+      tracking = false;
+      return;
+    }
+
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    const elapsed = Date.now() - startTime;
+    tracking = false;
+
+    // Só aceita um gesto claramente horizontal e relativamente rápido.
+    if (elapsed > 850 || Math.abs(dx) < SWIPE_MIN || Math.abs(dx) <= Math.abs(dy) * 1.25) return;
+    moveScreen(dx > 0 ? 'prev' : 'next');
+  };
+
+  const updateNavOnScroll = () => {
+    scrollTicking = false;
+    if (!isMobile()) {
+      document.body.classList.remove('mobile-nav-hidden');
+      lastScrollY = Math.max(0, window.scrollY);
+      return;
+    }
+
+    const currentY = Math.max(0, window.scrollY);
+    const delta = currentY - lastScrollY;
+
+    if (currentY <= 18) {
+      document.body.classList.remove('mobile-nav-hidden');
+    } else if (delta > 7) {
+      // Página descendo (dedo sobe): esconde.
+      document.body.classList.add('mobile-nav-hidden');
+    } else if (delta < -7) {
+      // Página subindo (dedo desce): mostra.
+      document.body.classList.remove('mobile-nav-hidden');
+    }
+
+    lastScrollY = currentY;
+  };
+
+  const onScroll = () => {
+    if (scrollTicking) return;
+    scrollTicking = true;
+    requestAnimationFrame(updateNavOnScroll);
+  };
+
+  document.addEventListener('touchstart', onTouchStart, { passive:true });
+  document.addEventListener('touchend', onTouchEnd, { passive:true });
+  window.addEventListener('scroll', onScroll, { passive:true });
+  window.addEventListener('resize', () => {
+    if (!isMobile()) document.body.classList.remove('mobile-nav-hidden');
+  }, { passive:true });
+
+  // Ao trocar de aba, garante que a barra reapareça e fique centralizada.
+  document.addEventListener('click', event => {
+    const tab = event.target.closest('.tab');
+    if (!tab || !isMobile()) return;
+    document.body.classList.remove('mobile-nav-hidden');
+  });
 })();

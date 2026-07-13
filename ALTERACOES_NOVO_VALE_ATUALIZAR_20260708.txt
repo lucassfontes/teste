@@ -1,5 +1,0 @@
-Alterações aplicadas no Novo VALLE:
-- Quando abrir pelo menu Novo, o formulário continua abrindo limpo.
-- O botão fica como Salvar para novo vale.
-- Quando abrir pelo botão Editar no histórico, o botão muda para Atualizar.
-- Ao cancelar ou salvar, o formulário é limpo e volta ao padrão Salvar.

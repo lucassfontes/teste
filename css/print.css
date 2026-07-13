@@ -1,9 +1,0 @@
-/*
- * ESTILOS DE IMPRESSÃO
- * Regras usadas quando o navegador entra em modo de impressão.
- */
-
-@page{size:A6;margin:8mm}body{font-family:Arial;margin:0}.vale-print{border:2px solid #111;border-radius:10px;padding:14px}.center{text-align:center}.line{border-bottom:1px solid #999;padding:6px 0;font-weight:bold}
-
-
-#nome{padding-left:22px;padding-right:22px;box-sizing:border-box;}

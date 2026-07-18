@@ -211,10 +211,23 @@ function criarPdfVale(v){
   txt('ASSINATURA DO CLIENTE',54,y+36,8,true,'#374151');
   line(76,y+10,344,y+10,'#111827',0.9);
 
-  // Rodapé
+  // Rodapé: usuário que gerou o PDF, data e hora em uma única linha.
   line(38,48,W-38,48,'#0b3a78',1.2);
-  txt('Valle gerado pelo sistema de controle de clientes.',54,30,7,false,'#64748b');
-  txt(`VALLE No ${String(v.numero||v.id||'0000').replace(/\D/g,'').slice(-4).padStart(4,'0')}`,312,30,10,true,'#0b3a78');
+  const perfilPdf=(typeof ValleCloud!=='undefined' && ValleCloud.profile) ? ValleCloud.profile : null;
+  const nomeUsuarioPdf=String(
+    perfilPdf?.name ||
+    perfilPdf?.nome ||
+    perfilPdf?.full_name ||
+    perfilPdf?.email ||
+    'USUARIO'
+  ).trim();
+  const agoraPdf=new Date();
+  const dataPdf=agoraPdf.toLocaleDateString('pt-BR');
+  const horaPdf=agoraPdf.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const rodapePdf=`Gerado por: ${nomeUsuarioPdf} • ${dataPdf} às ${horaPdf}`;
+  let rodapeSize=7;
+  while(textWidth(rodapePdf,rodapeSize)>344 && rodapeSize>5.5) rodapeSize-=0.25;
+  txt(rodapePdf,38+(344-textWidth(rodapePdf,rodapeSize))/2,30,rodapeSize,false,'#64748b');
 
   const stream=ops.join('\n');
   const objs=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>',`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>`,'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>',`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`];

@@ -1,68 +1,100 @@
-/** VALLE PWA — funcionamento offline + sincronização ao reconectar */
-const CACHE = 'valle-receive-mobile-footer-20260713-v1';
+/** VALLE PWA — atualização automática no celular + suporte offline */
+const CACHE = 'valle-auto-update-20260717-v7-preview-no-gaps';
 const APP_SHELL = [
-  './','./index.html','./manifest.json','./favicon.ico',
-  './vendor/bootstrap/bootstrap.min.css','./vendor/bootstrap/bootstrap.bundle.min.js',
-  './vendor/bootstrap-icons/bootstrap-icons.min.css','./css/app.css?v=20260713-receive-mobile-footer-v1',
-  './js/app.js?v=20260713-taxas-cliente-v1','./js/auth-ui.js?v=20260713-taxas-cliente-v1','./js/bootstrap-enhance.js?v=20260712-standard-v4',
-  './js/supabase-config.js','./js/supabase-client.js?v=20260712-offline2',
-  './js/pdf.js','./js/whatsapp.js','./js/clientes.js','./js/historico.js',
-  './js/dashboard.js','./js/backup.js','./js/storage.js','./js/util.js',
-  './icons/icon-valle.png','./icons/favicon-32x32.png','./icons/favicon-16x16.png',
-  './icons/android-chrome-192x192.png','./icons/android-chrome-512x512.png','./icons/apple-touch-icon.png'
+  './', './index.html', './manifest.json', './favicon.ico',
+  './vendor/bootstrap/bootstrap.min.css', './vendor/bootstrap/bootstrap.bundle.min.js',
+  './vendor/bootstrap-icons/bootstrap-icons.min.css', './css/app.css',
+  './js/app.js', './js/auth-ui.js', './js/bootstrap-enhance.js',
+  './js/supabase-config.js', './js/supabase-client.js',
+  './js/pdf.js', './js/whatsapp.js', './js/clientes.js', './js/historico.js',
+  './js/dashboard.js', './js/backup.js', './js/storage.js', './js/util.js',
+  './icons/icon-valle.png', './icons/favicon-32x32.png', './icons/favicon-16x16.png',
+  './icons/android-chrome-192x192.png', './icons/android-chrome-512x512.png',
+  './icons/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', event => {
   self.skipWaiting();
-  event.waitUntil((async()=>{
+  event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    // addAll é atômico; usamos chamadas individuais para um arquivo opcional não
-    // impedir o cache dos demais.
-    await Promise.all(APP_SHELL.map(async url=>{
-      try { await cache.add(url); } catch (_) {}
+    await Promise.all(APP_SHELL.map(async url => {
+      try {
+        // Ignora o cache HTTP para gravar no PWA a versão publicada mais recente.
+        const response = await fetch(url, { cache: 'reload' });
+        if (response.ok || response.type === 'opaque') {
+          await cache.put(url, response);
+        }
+      } catch (_) {
+        // Um arquivo opcional não deve impedir a instalação do restante do app.
+      }
     }));
   })());
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil((async()=>{
+  event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)));
+    await Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)));
     await self.clients.claim();
   })());
+});
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
-  const url = new URL(request.url);
 
-  // Navegações: tenta internet e usa index.html quando offline.
+  const url = new URL(request.url);
+  const sameOrigin = url.origin === self.location.origin;
+
+  // HTML/navegação: internet primeiro, cache apenas quando estiver offline.
   if (request.mode === 'navigate') {
-    event.respondWith((async()=>{
+    event.respondWith((async () => {
       try {
-        const response = await fetch(request);
+        const response = await fetch(request, { cache: 'no-store' });
         const cache = await caches.open(CACHE);
-        cache.put('./index.html', response.clone()).catch(()=>{});
+        await cache.put('./index.html', response.clone());
         return response;
       } catch (_) {
-        return (await caches.match(request)) || (await caches.match('./index.html'));
+        return (await caches.match(request)) ||
+               (await caches.match('./index.html')) ||
+               new Response('Aplicativo indisponível offline.', { status: 503 });
       }
     })());
     return;
   }
 
-  // Arquivos do app e bibliotecas CDN: cache primeiro para abertura imediata;
-  // em paralelo, atualiza o cache quando houver internet.
-  event.respondWith((async()=>{
+  // Arquivos locais do sistema: rede primeiro para aplicar atualizações imediatamente.
+  if (sameOrigin) {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request, { cache: 'no-store' });
+        if (response && response.ok) {
+          const cache = await caches.open(CACHE);
+          await cache.put(request, response.clone());
+        }
+        return response;
+      } catch (_) {
+        return (await caches.match(request)) ||
+               new Response('', { status: 504, statusText: 'Offline' });
+      }
+    })());
+    return;
+  }
+
+  // Recursos externos: cache primeiro e atualização em segundo plano.
+  event.respondWith((async () => {
     const cached = await caches.match(request);
-    const networkPromise = fetch(request).then(async response=>{
+    const network = fetch(request).then(async response => {
       if (response && (response.ok || response.type === 'opaque')) {
         const cache = await caches.open(CACHE);
-        cache.put(request, response.clone()).catch(()=>{});
+        await cache.put(request, response.clone());
       }
       return response;
-    }).catch(()=>null);
-    return cached || (await networkPromise) || new Response('', {status:504, statusText:'Offline'});
+    }).catch(() => null);
+    return cached || (await network) || new Response('', { status: 504, statusText: 'Offline' });
   })());
 });

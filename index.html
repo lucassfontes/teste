@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -15,427 +16,623 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20260713-receive-mobile-footer-v1">
+  <link rel="stylesheet" href="css/app.css?v=20260717-preview-fullscreen-v2">
 </head>
+
 <body class="bootstrap-only-ui">
-<div class="app">
-  <!-- Cabeçalho principal: título do sistema. A badge de prazo fica somente na aba Novo. -->
-  <header class="topbar glass">
-    <div>
-      <h1><img class="app-title-logo" src="icons/dashboard-icon.png" alt="VALLE"> VALLE</h1>
-      <p>Controle de clientes, vales e recebimentos</p>
-    </div>
-  </header>
-
-  <!-- Menu de navegação: troca entre Dashboard, Novo, Clientes, Histórico, Relatórios e Configuração. -->
-  <nav class="tabs glass">
-    <button class="tab active" data-screen="dashboard">🏠<span>Dashboard</span></button>
-    <button class="tab notification-tab" data-screen="notificacoes">🔔<span>Notificações</span><em id="notifCount" class="notif-count">0</em></button>
-    <button class="tab" data-screen="emprestimo">💰<span>Novo</span></button>
-    <button class="tab" data-screen="clientes">👤<span>Clientes</span></button>
-    <button class="tab" data-screen="historico">📜<span>Histórico</span></button>
-    <button class="tab" data-screen="relatorios">📊<span>Relatórios</span></button>
-    <button class="tab" data-screen="calendario">📅<span>Calendário</span></button>
-  </nav>
-
-  <main>
-    <!-- Aba Dashboard: painel premium responsivo para desktop e celular. -->
-    <section id="dashboard" class="screen active dashboard-pro dashboard-premium">
-      <div class="premium-mobile-top">
-        <div class="premium-mobile-brand">
-          <img class="dashboard-title-logo" src="icons/dashboard-icon.png" alt="VALLE">
-          <div class="premium-mobile-brand-text"><h2>DASHBOARD</h2><p>Visão geral do sistema</p></div>
-        </div>
-        <div class="premium-top-actions"><span class="bell-dot">🔔<em id="dashNotifMini">0</em></span><button type="button" class="premium-user-dot dashboard-user-trigger" id="dashboardUserMobile" aria-label="Abrir menu do usuário" aria-expanded="false">👤</button></div>
+  <div class="app">
+    <!-- Cabeçalho principal: título do sistema. A badge de prazo fica somente na aba Novo. -->
+    <header class="topbar glass">
+      <div>
+        <h1><img class="app-title-logo" src="icons/dashboard-icon.png" alt="VALLE"> VALLE</h1>
+        <p>Controle de clientes, vales e recebimentos</p>
       </div>
+    </header>
 
-      <div class="premium-desktop-head">
-        <div class="premium-dashboard-heading"><h2>Dashboard</h2><p>Visão geral do sistema</p></div>
-        <div class="premium-head-right"><span>📅 <b id="dashDataHoje">--/--/----</b></span><span class="bell-dot">🔔<em id="dashNotifMini2">0</em></span><div class="dashboard-user-menu"><button type="button" class="dashboard-user-trigger" id="dashboardUserTrigger" aria-expanded="false"><span>👤</span><strong id="dashboardUserName">Usuário</strong><span class="dashboard-user-chevron">▾</span></button></div></div>
-      </div>
-      <div class="dashboard-user-dropdown hidden" id="dashboardUserDropdown"><div class="dashboard-user-info"><strong id="dashboardUserDropdownName">Usuário</strong><small id="dashboardUserDropdownEmail"></small></div><button type="button" id="dashboardThemeBtn" class="user-theme-menu-btn">Modo escuro</button><button type="button" id="dashboardLogoutBtn">Sair</button></div>
+    <!-- Menu de navegação: troca entre Dashboard, Novo, Clientes, Histórico, Relatórios e Configuração. -->
+    <nav class="tabs glass">
+      <button class="tab active" data-screen="dashboard">🏠<span>Dashboard</span></button>
+      <button class="tab notification-tab" data-screen="notificacoes">🔔<span>Notificações</span><em id="notifCount"
+          class="notif-count">0</em></button>
+      <button class="tab" data-screen="emprestimo">💰<span>Novo</span></button>
+      <button class="tab" data-screen="clientes">👤<span>Clientes</span></button>
+      <button class="tab" data-screen="historico">📜<span>Histórico</span></button>
+      <button class="tab" data-screen="relatorios">📊<span>Relatórios</span></button>
+      <button class="tab" data-screen="calendario">📅<span>Calendário</span></button>
+    </nav>
 
-      <div class="premium-kpis dashboard-money-kpis">
-        <article class="premium-kpi green"><div class="kpi-icon">💵</div><small>VALOR EM CAIXA</small><strong id="dashCaixa">R$ 0,00</strong><p>Disponível para novos vales</p><em>↗ SALDO DISPONÍVEL</em></article>
-        <article class="premium-kpi blue"><div class="kpi-icon">🏦</div><small>CAPITAL INVESTIDO</small><strong id="dashInvestido">R$ 0,00</strong><p>Seu capital aplicado</p><em>— SEM VARIAÇÃO</em></article>
-        <article class="premium-kpi orange"><div class="kpi-icon">📈</div><small>VALOR DO VALLE</small><strong id="dashEmprestado">R$ 0,00</strong><p>Total de VALLES em aberto</p><em>↗ EM ABERTO</em></article>
-        <article class="premium-kpi purple"><div class="kpi-icon">💲</div><small>TOTAL A RECEBER</small><strong id="dashReceber">R$ 0,00</strong><p>Principal + juros</p><em>↗ CARTEIRA ATIVA</em></article>
-        <article class="premium-kpi cyan"><div class="kpi-icon">%</div><small>TOTAL DE JUROS</small><strong id="dashTotalJuros">R$ 0,00</strong><p>Juros a receber</p><em>↗ LUCRO PREVISTO</em></article>
-        <article class="premium-kpi gray"><div class="kpi-icon">%</div><small>JUROS CONFIGURÁVEL</small><strong id="dashJurosPercentual">R$ 0,00</strong><p>Sobre total de VALLES em aberto</p><em id="dashPctLabel">0%</em></article>
-        <article class="premium-kpi blue"><div class="kpi-icon">🧾</div><small>TOTAL COM JUROS %</small><strong id="dashTotalJurosPercentual">R$ 0,00</strong><p>VALLES em aberto + juros configurável</p><em>↗ CÁLCULO AUXILIAR</em></article>
-        <article class="premium-kpi green"><div class="kpi-icon">✅</div><small>JUROS RECEBIDOS</small><strong id="dashRecebido">R$ 0,00</strong><p>Somente juros dos vales pagos</p><em>LUCRO RECEBIDO</em></article>
-      </div>
-
-      <div class="premium-grid-main">
-        <section class="premium-panel chart-panel">
-          <div class="premium-panel-head"><h3>EVOLUÇÃO MENSAL</h3><select id="dashPeriodo" onchange="renderPremiumDashboard()"><option value="ano">Este ano</option><option value="6">Últimos 6 meses</option></select></div>
-          <div class="chart-legend"><span><i class="blue-dot"></i>VALLE</span><span><i class="green-dot"></i>Recebido</span></div>
-          <div id="premiumLineChart" class="premium-line-chart"></div>
-        </section>
-        <section class="premium-panel donut-panel">
-          <h3>SITUAÇÃO DOS VALES</h3>
-          <div id="premiumDonut" class="premium-donut-area"></div>
-        </section>
-        <section class="premium-panel mini-calendar-panel">
-          <div class="premium-panel-head"><h3>CALENDÁRIO</h3><button type="button" onclick="switchScreen('calendario')">Ver completo</button></div>
-          <div id="premiumMiniCalendar" class="premium-mini-calendar"></div>
-        </section>
-      </div>
-
-      <div class="premium-grid-bottom">
-        <section class="premium-panel premium-list-panel">
-          <div class="premium-panel-head"><h3>VALES ATRASADOS <span id="dashAtrasadosBadge">0</span></h3><button type="button" onclick="switchScreen('notificacoes')">Ver todos</button></div>
-          <div id="premiumAtrasadosList" class="premium-client-list"></div>
-        </section>
-        <section class="premium-panel premium-list-panel">
-          <div class="premium-panel-head"><h3>PRÓXIMOS A VENCER <span id="dashProximosBadge">0</span></h3><button type="button" onclick="switchScreen('notificacoes')">Ver todos</button></div>
-          <div id="premiumProximosList" class="premium-client-list"></div>
-        </section>
-        <section class="premium-panel premium-summary-panel">
-          <div class="premium-panel-head"><h3>RESUMO FINANCEIRO</h3><select id="dashResumoPeriodo" onchange="renderPremiumDashboard()"><option>Este mês</option></select></div>
-          <div class="premium-summary-list">
-            <div><span>💼 Total em VALLES</span><strong id="dashResumoEmprestado">R$ 0,00</strong></div>
-            <div><span>💵 Total recebido</span><strong id="dashResumoRecebido">R$ 0,00</strong></div>
-            <div><span>📂 Em aberto</span><strong id="dashResumoAberto">R$ 0,00</strong></div>
-            <div><span>✨ Juros recebidos</span><strong id="dashResumoJuros">R$ 0,00</strong></div>
-          </div>
-          <div class="premium-profit"><span>Lucro líquido</span><strong id="dashLucroLiquido">R$ 0,00</strong></div>
-        </section>
-      </div>
-
-      <!-- Elementos auxiliares mantidos para compatibilidade com funções antigas. -->
-      <span id="dashCapitalDisponivel" hidden>R$ 0,00</span>
-      <span id="dashRecebidoHoje" hidden>R$ 0,00</span>
-      <span id="dashRecebidoSemana" hidden>R$ 0,00</span>
-      <span id="dashRecebidoMes" hidden>R$ 0,00</span>
-      <span id="dashAtualizacao" hidden>--/--/----</span>
-      <span id="dashClientes" hidden>0</span>
-      <div id="ultimosVales" hidden></div>
-      <div id="rankingClientes" hidden></div>
-      <div id="historicoFinanceiro" hidden></div>
-    </section>
-
-    <!-- Aba Notificações: interface Bootstrap no mesmo padrão visual do Novo VALLE. -->
-    <section id="notificacoes" class="screen notifications-screen">
-      <div class="card notification-bootstrap-card">
-        <div class="notification-bootstrap-header">
-          <div class="notification-bootstrap-icon" aria-hidden="true"><i class="bi bi-bell-fill"></i></div>
-          <div class="notification-bootstrap-heading">
-            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
-              <h2 class="mb-0">NOTIFICAÇÕES</h2>
-              <span class="badge notification-count-badge"><i class="bi bi-bell me-1"></i><span id="notifHeaderCount">0</span></span>
+    <main>
+      <!-- Aba Dashboard: painel premium responsivo para desktop e celular. -->
+      <section id="dashboard" class="screen active dashboard-pro dashboard-premium">
+        <div class="premium-mobile-top">
+          <div class="premium-mobile-brand">
+            <img class="dashboard-title-logo" src="icons/dashboard-icon.png" alt="VALLE">
+            <div class="premium-mobile-brand-text">
+              <h2>DASHBOARD</h2>
+              <p>Visão geral do sistema</p>
             </div>
-            <p class="mb-0">Cobranças atrasadas e próximas do vencimento.</p>
           </div>
+          <div class="premium-top-actions"><span class="bell-dot">🔔<em id="dashNotifMini">0</em></span><button
+              type="button" class="premium-user-dot dashboard-user-trigger" id="dashboardUserMobile"
+              aria-label="Abrir menu do usuário" aria-expanded="false">👤</button></div>
         </div>
 
-        <div class="notification-bootstrap-body">
-          <div id="notificacoesResumo" class="notificacoes-resumo"></div>
-          <div class="btn-group w-100 notification-filter-group" role="group" aria-label="Filtros de notificações">
-            <button type="button" class="btn btn-outline-primary notif-filter-btn active todos" data-notif-filter="todos" onclick="setNotificationFilter('todos')"><i class="bi bi-list-ul me-1"></i>TODOS</button>
-            <button type="button" class="btn btn-outline-danger notif-filter-btn atrasados" data-notif-filter="atrasados" onclick="setNotificationFilter('atrasados')"><i class="bi bi-exclamation-octagon-fill me-1"></i>ATRASADOS</button>
-            <button type="button" class="btn btn-outline-warning notif-filter-btn hoje" data-notif-filter="hoje" onclick="setNotificationFilter('hoje')"><i class="bi bi-clock-fill me-1"></i>VENCE HOJE</button>
-            <button type="button" class="btn btn-outline-success notif-filter-btn proximos" data-notif-filter="proximos" onclick="setNotificationFilter('proximos')"><i class="bi bi-calendar-check-fill me-1"></i>PRÓXIMOS</button>
+        <div class="premium-desktop-head">
+          <div class="premium-dashboard-heading">
+            <h2>Dashboard</h2>
+            <p>Visão geral do sistema</p>
           </div>
-          <div class="input-group notification-search-group mt-3">
-            <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input class="form-control" id="notificacoesSearch" type="search" placeholder="PESQUISAR NAS NOTIFICAÇÕES" oninput="renderNotifications()" autocomplete="off">
-          </div>
-        </div>
-      </div>
-      <div id="notificacoesContainer" class="notifications-list mt-3"></div>
-    </section>
-
-    <!-- Aba Novo VALLE: formulário Bootstrap para criar ou editar um vale. -->
-    <section id="emprestimo" class="screen">
-      <div class="card form-card loan-bootstrap-card">
-        <div class="loan-bootstrap-header">
-          <div class="loan-bootstrap-icon" aria-hidden="true"><i class="bi bi-cash-coin"></i></div>
-          <div class="loan-bootstrap-heading">
-            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
-              <h2 class="mb-0">NOVO VALLE</h2>
-              <span class="badge loan-days-badge"><i class="bi bi-calendar3 me-1"></i><span id="diasBadge">30</span> DIAS</span>
-            </div>
-            <p class="mb-0">Preencha os dados para cadastrar um novo vale.</p>
+          <div class="premium-head-right"><span>📅 <b id="dashDataHoje">--/--/----</b></span><span
+              class="bell-dot">🔔<em id="dashNotifMini2">0</em></span>
+            <div class="dashboard-user-menu"><button type="button" class="dashboard-user-trigger"
+                id="dashboardUserTrigger" aria-expanded="false"><span>👤</span><strong
+                  id="dashboardUserName">Usuário</strong><span class="dashboard-user-chevron">▾</span></button></div>
           </div>
         </div>
+        <div class="dashboard-user-dropdown hidden" id="dashboardUserDropdown">
+          <div class="dashboard-user-info"><strong id="dashboardUserDropdownName">Usuário</strong>
+            <small id="dashboardUserDropdownEmail"></small>
+          </div>
+          <button type="button" id="dashboardThemeBtn"
+            class="user-theme-menu-btn">Modo escuro</button>
+          <button type="button" id="dashboardLogoutBtn">Sair</button>
+          <p id="versao_sytem"></p>
+        </div>
 
-        <form class="loan-bootstrap-form" onsubmit="return false;">
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="form-label" for="loanCliente"><i class="bi bi-person-fill me-2"></i>CLIENTE</label>
-              <div class="input-group loan-input-group">
-                <span class="input-group-text"><i class="bi bi-person-check"></i></span>
-                <input class="form-control" id="loanCliente" list="clientesLista" placeholder="DIGITE OU ESCOLHA O CLIENTE" autocomplete="off">
-                <datalist id="clientesLista"></datalist>
-              </div>
-            </div>
+        <div class="premium-kpis dashboard-money-kpis">
+          <article class="premium-kpi green">
+            <div class="kpi-icon">💵</div><small>VALOR EM CAIXA</small><strong id="dashCaixa">R$ 0,00</strong>
+            <p>Disponível para novos vales</p><em>↗ SALDO DISPONÍVEL</em>
+          </article>
+          <article class="premium-kpi blue">
+            <div class="kpi-icon">🏦</div><small>CAPITAL INVESTIDO</small><strong id="dashInvestido">R$ 0,00</strong>
+            <p>Seu capital aplicado</p><em>— SEM VARIAÇÃO</em>
+          </article>
+          <article class="premium-kpi orange">
+            <div class="kpi-icon">📈</div><small>VALOR DO VALLE</small><strong id="dashEmprestado">R$ 0,00</strong>
+            <p>Total de VALLES em aberto</p><em>↗ EM ABERTO</em>
+          </article>
+          <article class="premium-kpi purple">
+            <div class="kpi-icon">💲</div><small>TOTAL A RECEBER</small><strong id="dashReceber">R$ 0,00</strong>
+            <p>Principal + juros</p><em>↗ CARTEIRA ATIVA</em>
+          </article>
+          <article class="premium-kpi cyan">
+            <div class="kpi-icon">%</div><small>TOTAL DE JUROS</small><strong id="dashTotalJuros">R$ 0,00</strong>
+            <p>Juros a receber</p><em>↗ LUCRO PREVISTO</em>
+          </article>
+          <article class="premium-kpi gray">
+            <div class="kpi-icon">%</div><small>JUROS CONFIGURÁVEL</small><strong id="dashJurosPercentual">R$
+              0,00</strong>
+            <p>Sobre total de VALLES em aberto</p><em id="dashPctLabel">0%</em>
+          </article>
+          <article class="premium-kpi blue">
+            <div class="kpi-icon">🧾</div><small>TOTAL COM JUROS %</small><strong id="dashTotalJurosPercentual">R$
+              0,00</strong>
+            <p>VALLES em aberto + juros configurável</p><em>↗ CÁLCULO AUXILIAR</em>
+          </article>
+          <article class="premium-kpi green">
+            <div class="kpi-icon">✅</div><small>JUROS RECEBIDOS</small><strong id="dashRecebido">R$ 0,00</strong>
+            <p>Somente juros dos vales pagos</p><em>LUCRO RECEBIDO</em>
+          </article>
+        </div>
 
-            <div class="col-12 col-md-6">
-              <label class="form-label" for="loanValor"><i class="bi bi-currency-dollar me-2"></i>VALOR DO VALLE</label>
-              <div class="input-group loan-input-group">
-                <span class="input-group-text">R$</span>
-                <input class="form-control" id="loanValor" inputmode="numeric" placeholder="0,00">
-              </div>
-            </div>
-
-            <div class="col-12 col-md-6">
-              <label class="form-label" for="loanJuros"><i class="bi bi-percent me-2"></i>JUROS</label>
-              <div class="input-group loan-input-group">
-                <span class="input-group-text" aria-hidden="true"><i class="bi bi-percent"></i></span>
-                <input class="form-control" id="loanJuros" inputmode="decimal" value="30%" aria-label="Taxa de juros">
-              </div>
-            </div>
-
-            <div class="col-12 col-md-6">
-              <label class="form-label" for="loanTipoTaxaDiaria"><i class="bi bi-sliders me-2"></i>TIPO DA TAXA DIÁRIA</label>
-              <select class="form-select loan-form-control" id="loanTipoTaxaDiaria" aria-label="Tipo da taxa diária">
-                <option value="percentual">PORCENTAGEM (%)</option>
-                <option value="reais">VALOR FIXO (R$)</option>
+        <div class="premium-grid-main">
+          <section class="premium-panel chart-panel">
+            <div class="premium-panel-head">
+              <h3>EVOLUÇÃO MENSAL</h3><select id="dashPeriodo" onchange="renderPremiumDashboard()">
+                <option value="ano">Este ano</option>
+                <option value="6">Últimos 6 meses</option>
               </select>
             </div>
+            <div class="chart-legend"><span><i class="blue-dot"></i>VALLE</span><span><i
+                  class="green-dot"></i>Recebido</span></div>
+            <div id="premiumLineChart" class="premium-line-chart"></div>
+          </section>
+          <section class="premium-panel donut-panel">
+            <h3>SITUAÇÃO DOS VALES</h3>
+            <div id="premiumDonut" class="premium-donut-area"></div>
+          </section>
+          <section class="premium-panel mini-calendar-panel">
+            <div class="premium-panel-head">
+              <h3>CALENDÁRIO</h3><button type="button" onclick="switchScreen('calendario')">Ver completo</button>
+            </div>
+            <div id="premiumMiniCalendar" class="premium-mini-calendar"></div>
+          </section>
+        </div>
 
-            <div class="col-12 col-md-6">
-              <label class="form-label" for="loanTaxaDiaria"><i class="bi bi-calendar-plus me-2"></i>TAXA DIÁRIA</label>
-              <div class="input-group loan-input-group">
-                <span class="input-group-text" id="loanTaxaDiariaPrefix">%</span>
-                <input class="form-control" id="loanTaxaDiaria" inputmode="decimal" value="0%" aria-label="Taxa diária por atraso">
+        <div class="premium-grid-bottom">
+          <section class="premium-panel premium-list-panel">
+            <div class="premium-panel-head">
+              <h3>VALES ATRASADOS <span id="dashAtrasadosBadge">0</span></h3><button type="button"
+                onclick="switchScreen('notificacoes')">Ver todos</button>
+            </div>
+            <div id="premiumAtrasadosList" class="premium-client-list"></div>
+          </section>
+          <section class="premium-panel premium-list-panel">
+            <div class="premium-panel-head">
+              <h3>PRÓXIMOS A VENCER <span id="dashProximosBadge">0</span></h3><button type="button"
+                onclick="switchScreen('notificacoes')">Ver todos</button>
+            </div>
+            <div id="premiumProximosList" class="premium-client-list"></div>
+          </section>
+          <section class="premium-panel premium-summary-panel">
+            <div class="premium-panel-head">
+              <h3>RESUMO FINANCEIRO</h3><select id="dashResumoPeriodo" onchange="renderPremiumDashboard()">
+                <option>Este mês</option>
+              </select>
+            </div>
+            <div class="premium-summary-list">
+              <div><span>💼 Total em VALLES</span><strong id="dashResumoEmprestado">R$ 0,00</strong></div>
+              <div><span>💵 Total recebido</span><strong id="dashResumoRecebido">R$ 0,00</strong></div>
+              <div><span>📂 Em aberto</span><strong id="dashResumoAberto">R$ 0,00</strong></div>
+              <div><span>✨ Juros recebidos</span><strong id="dashResumoJuros">R$ 0,00</strong></div>
+            </div>
+            <div class="premium-profit"><span>Lucro líquido</span><strong id="dashLucroLiquido">R$ 0,00</strong></div>
+          </section>
+        </div>
+
+        <!-- Elementos auxiliares mantidos para compatibilidade com funções antigas. -->
+        <span id="dashCapitalDisponivel" hidden>R$ 0,00</span>
+        <span id="dashRecebidoHoje" hidden>R$ 0,00</span>
+        <span id="dashRecebidoSemana" hidden>R$ 0,00</span>
+        <span id="dashRecebidoMes" hidden>R$ 0,00</span>
+        <span id="dashAtualizacao" hidden>--/--/----</span>
+        <span id="dashClientes" hidden>0</span>
+        <div id="ultimosVales" hidden></div>
+        <div id="rankingClientes" hidden></div>
+        <div id="historicoFinanceiro" hidden></div>
+      </section>
+
+      <!-- Aba Notificações: interface Bootstrap no mesmo padrão visual do Novo VALLE. -->
+      <section id="notificacoes" class="screen notifications-screen">
+        <div class="card notification-bootstrap-card">
+          <div class="notification-bootstrap-header">
+            <div class="notification-bootstrap-icon" aria-hidden="true"><i class="bi bi-bell-fill"></i></div>
+            <div class="notification-bootstrap-heading">
+              <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                <h2 class="mb-0">NOTIFICAÇÕES</h2>
+                <span class="badge notification-count-badge"><i class="bi bi-bell me-1"></i><span
+                    id="notifHeaderCount">0</span></span>
               </div>
-              <div class="form-text loan-rate-help">Aplicada por dia após o vencimento.</div>
-            </div>
-
-            <div class="col-12 col-md-6">
-              <label class="form-label" for="loanInicio"><i class="bi bi-calendar-event me-2"></i>DATA INICIAL</label>
-              <input class="form-control loan-form-control" id="loanInicio" type="date">
-            </div>
-
-            <div class="col-12 col-md-6">
-              <label class="form-label" for="loanFinal"><i class="bi bi-calendar-check me-2"></i>DATA FINAL</label>
-              <input class="form-control loan-form-control" id="loanFinal" type="date">
-            </div>
-
-            <div class="col-12">
-              <label class="form-label" for="loanTotal"><i class="bi bi-check2-circle me-2"></i>TOTAL COM JUROS</label>
-              <div class="input-group loan-input-group loan-total-group">
-                <span class="input-group-text"><i class="bi bi-wallet2"></i></span>
-                <input class="form-control" id="loanTotal" readonly placeholder="R$ 0,00">
-              </div>
-            </div>
-
-            <div class="col-12">
-              <label class="form-label" for="loanObs"><i class="bi bi-card-text me-2"></i>OBSERVAÇÃO</label>
-              <textarea class="form-control loan-form-control loan-observation" id="loanObs" rows="4" placeholder="OBSERVAÇÃO DO VALE"></textarea>
+              <p class="mb-0">Cobranças atrasadas e próximas do vencimento.</p>
             </div>
           </div>
 
-          <div class="loan-bootstrap-actions d-flex justify-content-end gap-2 flex-wrap mt-4 pt-3">
-            <button class="btn btn-outline-secondary" id="cancelLoanBtn" type="button"><i class="bi bi-x-circle me-2"></i>CANCELAR</button>
-            <button class="btn btn-primary" id="saveOnlyBtn" type="button"><i class="bi bi-check-circle me-2"></i>SALVAR</button>
-          </div>
-        </form>
-      </div>
-    </section>
-
-    <!-- Aba Clientes: pesquisa e cadastro aberto em modal. -->
-    <section id="clientes" class="screen">
-      <div class="card clientes-list-card">
-        <div class="clientes-page-header">
-          <div class="clientes-page-header-icon" aria-hidden="true">👥</div>
-          <div class="clientes-page-header-copy">
-            <h2>CLIENTES</h2>
-            <p>Gerencie os clientes cadastrados</p>
+          <div class="notification-bootstrap-body">
+            <div id="notificacoesResumo" class="notificacoes-resumo"></div>
+            <div class="btn-group w-100 notification-filter-group" role="group" aria-label="Filtros de notificações">
+              <button type="button" class="btn btn-outline-primary notif-filter-btn active todos"
+                data-notif-filter="todos" onclick="setNotificationFilter('todos')"><i
+                  class="bi bi-list-ul me-1"></i>TODOS</button>
+              <button type="button" class="btn btn-outline-danger notif-filter-btn atrasados"
+                data-notif-filter="atrasados" onclick="setNotificationFilter('atrasados')"><i
+                  class="bi bi-exclamation-octagon-fill me-1"></i>ATRASADOS</button>
+              <button type="button" class="btn btn-outline-warning notif-filter-btn hoje" data-notif-filter="hoje"
+                onclick="setNotificationFilter('hoje')"><i class="bi bi-clock-fill me-1"></i>VENCE HOJE</button>
+              <button type="button" class="btn btn-outline-success notif-filter-btn proximos"
+                data-notif-filter="proximos" onclick="setNotificationFilter('proximos')"><i
+                  class="bi bi-calendar-check-fill me-1"></i>PRÓXIMOS</button>
+            </div>
+            <div class="input-group notification-search-group mt-3">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input class="form-control" id="notificacoesSearch" type="search" placeholder="PESQUISAR NAS NOTIFICAÇÕES"
+                oninput="renderNotifications()" autocomplete="off">
+            </div>
           </div>
         </div>
-        <div class="clientes-toolbar">
-          <div class="input-group clientes-search-group">
-            <span class="input-group-text clientes-search-icon" aria-hidden="true">
-              <i class="bi bi-search"></i>
+        <div id="notificacoesContainer" class="notifications-list mt-3"></div>
+      </section>
+
+      <!-- Aba Novo VALLE: formulário Bootstrap para criar ou editar um vale. -->
+      <section id="emprestimo" class="screen">
+        <div class="card form-card loan-bootstrap-card">
+          <div class="loan-bootstrap-header">
+            <div class="loan-bootstrap-icon" aria-hidden="true"><i class="bi bi-cash-coin"></i></div>
+            <div class="loan-bootstrap-heading">
+              <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                <h2 class="mb-0">NOVO VALLE</h2>
+                <span class="badge loan-days-badge"><i class="bi bi-calendar3 me-1"></i><span id="diasBadge">30</span>
+                  DIAS</span>
+              </div>
+              <p class="mb-0">Preencha os dados para cadastrar um novo vale.</p>
+            </div>
+          </div>
+
+          <form class="loan-bootstrap-form" onsubmit="return false;">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label" for="loanCliente"><i class="bi bi-person-fill me-2"></i>CLIENTE</label>
+                <div class="input-group loan-input-group">
+                  <span class="input-group-text"><i class="bi bi-person-check"></i></span>
+                  <input class="form-control" id="loanCliente" list="clientesLista"
+                    placeholder="DIGITE OU ESCOLHA O CLIENTE" autocomplete="off">
+                  <datalist id="clientesLista"></datalist>
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="loanValor"><i class="bi bi-currency-dollar me-2"></i>VALOR DO
+                  VALLE</label>
+                <div class="input-group loan-input-group">
+                  <span class="input-group-text">R$</span>
+                  <input class="form-control" id="loanValor" inputmode="numeric" placeholder="0,00">
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="loanJuros"><i class="bi bi-percent me-2"></i>JUROS</label>
+                <div class="input-group loan-input-group">
+                  <span class="input-group-text" aria-hidden="true"><i class="bi bi-percent"></i></span>
+                  <input class="form-control" id="loanJuros" inputmode="decimal" value="30%" aria-label="Taxa de juros">
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="loanTipoTaxaDiaria"><i class="bi bi-sliders me-2"></i>TIPO DA TAXA
+                  DIÁRIA</label>
+                <select class="form-select loan-form-control" id="loanTipoTaxaDiaria" aria-label="Tipo da taxa diária">
+                  <option value="percentual">PORCENTAGEM (%)</option>
+                  <option value="reais">VALOR FIXO (R$)</option>
+                </select>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="loanTaxaDiaria"><i class="bi bi-calendar-plus me-2"></i>TAXA
+                  DIÁRIA</label>
+                <div class="input-group loan-input-group">
+                  <span class="input-group-text" id="loanTaxaDiariaPrefix">%</span>
+                  <input class="form-control" id="loanTaxaDiaria" inputmode="decimal" value="0%"
+                    aria-label="Taxa diária por atraso">
+                </div>
+                <div class="form-text loan-rate-help">Aplicada por dia após o vencimento.</div>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="loanInicio"><i class="bi bi-calendar-event me-2"></i>DATA INICIAL</label>
+                <input class="form-control loan-form-control" id="loanInicio" type="date">
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="loanFinal"><i class="bi bi-calendar-check me-2"></i>DATA FINAL</label>
+                <input class="form-control loan-form-control" id="loanFinal" type="date">
+              </div>
+
+              <div class="col-12">
+                <label class="form-label" for="loanTotal"><i class="bi bi-check2-circle me-2"></i>TOTAL COM
+                  JUROS</label>
+                <div class="input-group loan-input-group loan-total-group">
+                  <span class="input-group-text"><i class="bi bi-wallet2"></i></span>
+                  <input class="form-control" id="loanTotal" readonly placeholder="R$ 0,00">
+                </div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label" for="loanObs"><i class="bi bi-card-text me-2"></i>OBSERVAÇÃO</label>
+                <textarea class="form-control loan-form-control loan-observation" id="loanObs" rows="4"
+                  placeholder="OBSERVAÇÃO DO VALE"></textarea>
+              </div>
+            </div>
+
+            <div class="loan-bootstrap-actions d-flex justify-content-end gap-2 flex-wrap mt-4 pt-3">
+              <button class="btn btn-outline-secondary" id="cancelLoanBtn" type="button"><i
+                  class="bi bi-x-circle me-2"></i>CANCELAR</button>
+              <button class="btn btn-primary" id="saveOnlyBtn" type="button"><i
+                  class="bi bi-check-circle me-2"></i>SALVAR</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Aba Clientes: pesquisa e cadastro aberto em modal. -->
+      <section id="clientes" class="screen">
+        <div class="card clientes-list-card clientes-bootstrap-card border-0 shadow-lg">
+          <div class="card-header clientes-page-header d-flex align-items-center gap-3 bg-transparent">
+            <span
+              class="clientes-page-header-icon d-inline-flex align-items-center justify-content-center flex-shrink-0"
+              aria-hidden="true">
+              <i class="bi bi-people-fill"></i>
             </span>
-            <input
-              class="form-control clientes-search-input"
-              id="searchClientes"
-              type="search"
-              placeholder="PESQUISAR CLIENTE"
-              aria-label="Pesquisar cliente">
-            <button
-              class="btn btn-success clientes-new-btn-bootstrap"
-              id="openClientModalBtn"
-              type="button">
-              <i class="bi bi-plus-circle-fill" aria-hidden="true"></i>
-              <span>NOVO</span>
-            </button>
+            <div class="clientes-page-header-copy flex-grow-1 min-w-0">
+              <h2 class="card-title mb-1">CLIENTES</h2>
+              <p class="card-subtitle mb-0">GERENCIE OS CLIENTES CADASTRADOS</p>
+            </div>
+            <span class="badge clientes-header-badge d-none d-sm-inline-flex align-items-center gap-2 rounded-pill">
+              <i class="bi bi-people-fill" aria-hidden="true"></i>
+              CLIENTES
+            </span>
+          </div>
+          <div class="card-body clientes-card-body">
+            <div class="clientes-toolbar">
+              <div class="input-group clientes-search-group">
+                <span class="input-group-text clientes-search-icon" aria-hidden="true">
+                  <i class="bi bi-search"></i>
+                </span>
+                <input class="form-control clientes-search-input" id="searchClientes" type="search"
+                  placeholder="PESQUISAR CLIENTE" aria-label="Pesquisar cliente">
+                <button class="btn btn-success clientes-new-btn-bootstrap" id="openClientModalBtn" type="button">
+                  <i class="bi bi-plus-circle-fill" aria-hidden="true"></i>
+                  <span>NOVO</span>
+                </button>
+              </div>
+            </div>
+            <div id="clientesContainer" class="list cards"></div>
           </div>
         </div>
-        <div id="clientesContainer" class="list cards"></div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Aba Histórico: lista todos os vales salvos e permite editar, imprimir, enviar PDF, receber ou excluir. -->
-    <section id="historico" class="screen">
-      <div class="historico-header">
-        <h2><span class="historico-title-icon">◷</span> Histórico</h2>
-      </div>
-      <div class="card historico-card">
-        <div class="historico-filtros">
-          <label class="historico-filtro historico-status">
-            <span>Status</span>
-            <select id="filtroHistoricoStatus">
-              <option value="TODOS">TODOS OS STATUS</option>
-              <option value="ABERTO">ABERTO / A RECEBER</option>
-              <option value="ATRASADO">ATRASADO</option>
-              <option value="PAGO">RECEBIDO / PAGO</option>
-            </select>
-          </label>
-          <label class="historico-filtro historico-data">
-            <span>DATA INICIAL</span>
-            <input id="filtroHistoricoInicio" type="date">
-          </label>
-          <label class="historico-filtro historico-data">
-            <span>DATA FINAL</span>
-            <input id="filtroHistoricoFim" type="date">
-          </label>
-          <button class="btn primary historico-filtrar-btn" id="limparHistoricoFiltrosBtn" type="button">LIMPAR</button>
-        </div>
-        <input class="search" id="searchHistorico" placeholder="🔍 PESQUISAR NO HISTÓRICO">
-        <div id="historicoContainer" class="list cards"></div>
-      </div>
-    </section>
-
-    <!-- Aba Relatórios: visão profissional com ranking, saúde da carteira e histórico por cliente. -->
-    <section id="relatorios" class="screen relatorios-screen">
-      <div class="card relatorios-card">
-        <div class="rel-head">
-          <div>
-            <h2>📊 Relatórios</h2>
-            <p>Resumo financeiro, risco dos clientes e histórico completo por cliente.</p>
-          </div>
-          <input id="relSearchCliente" class="search" placeholder="🔍 PESQUISAR NO RELATÓRIO">
-        </div>
-
-        <div class="rel-kpi-grid">
-          <div class="rel-kpi blue"><small>Cliente que mais pegou</small><strong id="relTopCliente">-</strong><span>Quantidade de vales</span></div>
-          <div class="rel-kpi red"><small>Maior devedor</small><strong id="relMaiorDevedor">-</strong><span>Maior saldo em aberto</span></div>
-          <div class="rel-kpi orange"><small>Total em aberto</small><strong id="relAberto">R$ 0,00</strong><span>Capital + juros em aberto</span></div>
-          <div class="rel-kpi green"><small>Recebido</small><strong id="relRecebido">R$ 0,00</strong><span>Vales pagos + juros recebidos</span></div>
-          <div class="rel-kpi purple"><small>Juros recebidos</small><strong id="relJurosRecebidos">R$ 0,00</strong><span>Lucro já recebido</span></div>
-          <div class="rel-kpi slate"><small>Clientes com risco</small><strong id="relClientesRisco">0</strong><span>Atrasados ou mau histórico</span></div>
-        </div>
-
-        <div class="rel-section-title">
-          <div><h3>Histórico e classificação dos clientes</h3><p>Veja se o cliente é bom pagador, médio ou de risco.</p></div>
-          <div class="rel-legenda"><span class="good">Bom pagador</span><span class="medium">Atenção</span><span class="bad">Risco</span></div>
-        </div>
-        <div id="relDividas" class="rel-client-list"></div>
-      </div>
-    </section>
-
-    <!-- Aba Calendário: visão mensal de vencimentos. -->
-    <section id="calendario" class="screen calendario-screen">
-      <div class="card calendario-card">
-        <div class="section-head"><h2>📅 Calendário de vencimentos</h2><small>Veja quantos vales vencem em cada dia</small></div>
-        <div id="calendarioVencimentos" class="v3-calendar"></div>
-      </div>
-    </section>
-
-    <!-- Configurações da sessão: capital e backup. Juros e atraso são individuais por usuário de serviço. -->
-    <section id="configuracoes" class="screen">
-      <div class="card form-card config-card">
-        <h2>⚙️ Configuração</h2>
-        <div class="form-grid config-grid">
-          <label class="field"><span>🏦 Capital investido</span><input id="configCapitalInvestido" inputmode="numeric" placeholder="R$ 0,00"></label>
-        </div>
-        <div class="actions config-actions">
-          <button class="btn primary" id="saveConfigBtn">SALVAR CONFIGURAÇÃO</button>
-        </div>
-      </div>
-
-      <div class="card form-card backup-card">
-        <h2>📂 Backup</h2>
-        <p class="backup-help">O backup automático é salvo sozinho neste navegador quando você altera clientes, vales ou configurações.</p>
-        <p class="backup-status" id="autoBackupInfo">Último backup automático: verificando...</p>
-        <div class="actions backup-actions">
-          <button class="btn primary" id="backupJsonBtn">📂 Baixar backup JSON</button>
-          <label class="btn light filebtn">📥 Restaurar JSON<input id="restoreInput" type="file" accept="application/json" hidden></label>
-          <button class="btn success" id="restoreAutoBtn">♻️ Restaurar último automático</button>
-          <button class="btn danger" id="wipeBtn">APAGAR TUDO</button>
-        </div>
-      </div>
-    </section>
-  </main>
-</div>
-
-<div class="modal fade valle-client-modal bootstrap-only-ui" id="clientModal" tabindex="-1" aria-labelledby="clientModalTitle" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header align-items-start">
-        <div class="d-flex align-items-center gap-3 pe-3">
-          <span class="client-modal-title-icon" aria-hidden="true"><i class="bi bi-person-plus-fill"></i></span>
-          <div>
-            <h2 class="modal-title" id="clientModalTitle">Cadastro de cliente</h2>
-            <p class="client-modal-subtitle">Preencha os dados para cadastrar um novo cliente.</p>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="modal-body">
-        <input type="hidden" id="clienteId">
-        <div class="row g-4">
-          <div class="col-12">
-            <label for="cliNome" class="form-label"><i class="bi bi-person-fill"></i><span>Nome</span></label>
-            <input type="text" class="form-control form-control-lg" id="cliNome" placeholder="Nome do cliente" autocomplete="name">
+      <!-- Aba Histórico: lista todos os vales salvos e permite editar, imprimir, enviar PDF, receber ou excluir. -->
+      <section id="historico" class="screen">
+        <div class="card historico-card historico-bootstrap-card border-0 shadow-lg">
+          <div class="card-header historico-page-header d-flex align-items-center gap-3 bg-transparent">
+            <span
+              class="historico-page-header-icon d-inline-flex align-items-center justify-content-center flex-shrink-0"
+              aria-hidden="true">
+              <i class="bi bi-clock-history"></i>
+            </span>
+            <div class="historico-page-header-copy flex-grow-1 min-w-0">
+              <h2 class="card-title mb-1">HISTÓRICO</h2>
+              <p class="card-subtitle mb-0">CONSULTE E GERENCIE TODOS OS VALES CADASTRADOS</p>
+            </div>
+            <span class="badge historico-header-badge d-none d-sm-inline-flex align-items-center gap-2 rounded-pill">
+              <i class="bi bi-journal-text" aria-hidden="true"></i>
+              HISTÓRICO
+            </span>
           </div>
 
-          <div class="col-12 col-md-6">
-            <label for="cliTelefone" class="form-label"><i class="bi bi-telephone-fill"></i><span>Telefone</span></label>
-            <input type="tel" class="form-control form-control-lg" id="cliTelefone" inputmode="tel" placeholder="(94) 99999-9999" autocomplete="tel">
-          </div>
+          <div class="card-body historico-card-body">
+            <div class="historico-filtros row g-3 align-items-end">
+              <div class="historico-filtro historico-status col-12 col-lg">
+                <label class="form-label" for="filtroHistoricoStatus"><i
+                    class="bi bi-funnel-fill me-1"></i>STATUS</label>
+                <select class="form-select" id="filtroHistoricoStatus">
+                  <option value="TODOS">TODOS OS STATUS</option>
+                  <option value="ABERTO">ABERTO / A RECEBER</option>
+                  <option value="ATRASADO">ATRASADO</option>
+                  <option value="PAGO">RECEBIDO / PAGO</option>
+                </select>
+              </div>
+              <div class="historico-filtro historico-data col-12 col-md-6 col-lg">
+                <label class="form-label" for="filtroHistoricoInicio"><i class="bi bi-calendar-event me-1"></i>DATA
+                  INICIAL</label>
+                <input class="form-control" id="filtroHistoricoInicio" type="date">
+              </div>
+              <div class="historico-filtro historico-data col-12 col-md-6 col-lg">
+                <label class="form-label" for="filtroHistoricoFim"><i class="bi bi-calendar-check me-1"></i>DATA
+                  FINAL</label>
+                <input class="form-control" id="filtroHistoricoFim" type="date">
+              </div>
+              <div class="col-12 col-lg-auto">
+                <button class="btn historico-filtrar-btn w-100" id="limparHistoricoFiltrosBtn" type="button">
+                  <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                  <span>LIMPAR</span>
+                </button>
+              </div>
+            </div>
 
-          <div class="col-12 col-md-6">
-            <label for="cliCpf" class="form-label"><i class="bi bi-person-vcard-fill"></i><span>CPF</span></label>
-            <input type="text" class="form-control form-control-lg" id="cliCpf" inputmode="numeric" placeholder="000.000.000-00">
-          </div>
+            <div class="input-group historico-search-group">
+              <span class="input-group-text historico-search-icon" aria-hidden="true"><i
+                  class="bi bi-search"></i></span>
+              <input class="form-control historico-search-input" id="searchHistorico" type="search"
+                placeholder="PESQUISAR NO HISTÓRICO" aria-label="Pesquisar no histórico">
+            </div>
 
-          <div class="col-12">
-            <label for="cliObs" class="form-label"><i class="bi bi-card-text"></i><span>Observações</span></label>
-            <textarea class="form-control" id="cliObs" rows="4" placeholder="Observações do cliente"></textarea>
+            <div id="historicoContainer" class="list cards"></div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="modal-footer">
-        <button class="btn btn-outline-secondary btn-lg" id="clearClientBtn" type="button">
-          <i class="bi bi-x-circle"></i><span>Cancelar</span>
-        </button>
-        <button class="btn btn-primary btn-lg" id="saveClientBtn" type="button">
-          <i class="bi bi-check2-circle"></i><span>Salvar</span>
-        </button>
+      <!-- Aba Relatórios: visão profissional com ranking, saúde da carteira e histórico por cliente. -->
+      <section id="relatorios" class="screen relatorios-screen">
+        <div class="card relatorios-card">
+          <div class="rel-head">
+            <div>
+              <h2>📊 Relatórios</h2>
+              <p>Resumo financeiro, risco dos clientes e histórico completo por cliente.</p>
+            </div>
+            <input id="relSearchCliente" class="search" placeholder="🔍 PESQUISAR NO RELATÓRIO">
+          </div>
+
+          <div class="rel-kpi-grid">
+            <div class="rel-kpi blue"><small>Cliente que mais pegou</small><strong
+                id="relTopCliente">-</strong><span>Quantidade de vales</span></div>
+            <div class="rel-kpi red"><small>Maior devedor</small><strong id="relMaiorDevedor">-</strong><span>Maior
+                saldo em aberto</span></div>
+            <div class="rel-kpi orange"><small>Total em aberto</small><strong id="relAberto">R$
+                0,00</strong><span>Capital + juros em aberto</span></div>
+            <div class="rel-kpi green"><small>Recebido</small><strong id="relRecebido">R$ 0,00</strong><span>Vales pagos
+                + juros recebidos</span></div>
+            <div class="rel-kpi purple"><small>Juros recebidos</small><strong id="relJurosRecebidos">R$
+                0,00</strong><span>Lucro já recebido</span></div>
+            <div class="rel-kpi slate"><small>Clientes com risco</small><strong
+                id="relClientesRisco">0</strong><span>Atrasados ou mau histórico</span></div>
+          </div>
+
+          <div class="rel-section-title">
+            <div>
+              <h3>Histórico e classificação dos clientes</h3>
+              <p>Veja se o cliente é bom pagador, médio ou de risco.</p>
+            </div>
+            <div class="rel-legenda"><span class="good">Bom pagador</span><span class="medium">Atenção</span><span
+                class="bad">Risco</span></div>
+          </div>
+          <div id="relDividas" class="rel-client-list"></div>
+        </div>
+      </section>
+
+      <!-- Aba Calendário: visão mensal de vencimentos. -->
+      <section id="calendario" class="screen calendario-screen">
+        <div class="card calendario-card">
+          <div class="section-head">
+            <h2>📅 Calendário de vencimentos</h2><small>Veja quantos vales vencem em cada dia</small>
+          </div>
+          <div id="calendarioVencimentos" class="v3-calendar"></div>
+        </div>
+      </section>
+
+      <!-- Configurações da sessão: capital e backup. Juros e atraso são individuais por usuário de serviço. -->
+      <section id="configuracoes" class="screen">
+        <div class="card form-card config-card">
+          <h2>⚙️ Configuração</h2>
+          <div class="form-grid config-grid">
+            <label class="field"><span>🏦 Capital investido</span><input id="configCapitalInvestido" inputmode="numeric"
+                placeholder="R$ 0,00"></label>
+          </div>
+          <div class="actions config-actions">
+            <button class="btn primary" id="saveConfigBtn">SALVAR CONFIGURAÇÃO</button>
+          </div>
+        </div>
+
+        <div class="card form-card backup-card">
+          <h2>📂 Backup</h2>
+          <p class="backup-help">O backup automático é salvo sozinho neste navegador quando você altera clientes, vales
+            ou configurações.</p>
+          <p class="backup-status" id="autoBackupInfo">Último backup automático: verificando...</p>
+          <div class="actions backup-actions">
+            <button class="btn primary" id="backupJsonBtn">📂 Baixar backup JSON</button>
+            <label class="btn light filebtn">📥 Restaurar JSON<input id="restoreInput" type="file"
+                accept="application/json" hidden></label>
+            <button class="btn success" id="restoreAutoBtn">♻️ Restaurar último automático</button>
+            <button class="btn danger" id="wipeBtn">APAGAR TUDO</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal fade valle-client-modal bootstrap-only-ui" id="clientModal" tabindex="-1"
+    aria-labelledby="clientModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header align-items-start">
+          <div class="d-flex align-items-center gap-3 pe-3">
+            <span class="client-modal-title-icon" aria-hidden="true"><i class="bi bi-person-plus-fill"></i></span>
+            <div>
+              <h2 class="modal-title" id="clientModalTitle">Cadastro de cliente</h2>
+              <p class="client-modal-subtitle">Preencha os dados para cadastrar um novo cliente.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" id="clienteId">
+          <div class="row g-4">
+            <div class="col-12">
+              <label for="cliNome" class="form-label"><i class="bi bi-person-fill"></i><span>Nome</span></label>
+              <input type="text" class="form-control form-control-lg" id="cliNome" placeholder="Nome do cliente"
+                autocomplete="name">
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label for="cliTelefone" class="form-label"><i
+                  class="bi bi-telephone-fill"></i><span>Telefone</span></label>
+              <input type="tel" class="form-control form-control-lg" id="cliTelefone" inputmode="tel"
+                placeholder="(94) 99999-9999" autocomplete="tel">
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label for="cliCpf" class="form-label"><i class="bi bi-person-vcard-fill"></i><span>CPF</span></label>
+              <input type="text" class="form-control form-control-lg" id="cliCpf" inputmode="numeric"
+                placeholder="000.000.000-00">
+            </div>
+
+            <div class="col-12">
+              <label for="cliObs" class="form-label"><i class="bi bi-card-text"></i><span>Observações</span></label>
+              <textarea class="form-control" id="cliObs" rows="4" placeholder="Observações do cliente"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary btn-lg" id="clearClientBtn" type="button">
+            <i class="bi bi-x-circle"></i><span>Cancelar</span>
+          </button>
+          <button class="btn btn-primary btn-lg" id="saveClientBtn" type="button">
+            <i class="bi bi-check2-circle"></i><span>Salvar</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<div class="modal fade receive-bs-modal" id="receiveModal" tabindex="-1" aria-labelledby="receiveModalTitle" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div id="receiveModalBody"></div>
+  <div class="modal fade receive-bs-modal" id="receiveModal" tabindex="-1" aria-labelledby="receiveModalTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div id="receiveModalBody"></div>
+      </div>
     </div>
   </div>
-</div>
 
-<div id="partialPaymentModal" class="partial-payment-modal">
-  <div id="partialPaymentBody" class="partial-payment-card"></div>
-</div>
+  <div id="partialPaymentModal" class="partial-payment-modal" role="dialog" aria-modal="true" aria-hidden="true"
+    aria-label="Pagamento parcial">
+    <div id="partialPaymentBody" class="partial-payment-card"></div>
+  </div>
 
-<div id="toast" class="toast"></div>
-<!-- JavaScript principal do sistema. Toda a lógica fica em js/app.js. -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="js/supabase-config.js"></script>
-<script src="js/supabase-client.js?v=20260712-offline2"></script>
-<script src="js/app.js?v=20260713-modal-receber-refeito-v1"></script>
-<script src="js/auth-ui.js?v=20260713-taxas-cliente-v1"></script>
-<script src="js/bootstrap-enhance.js?v=20260712-standard-v4"></script>
-<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js').catch(()=>{});}</script>
+  <div id="toastContainer" class="app-alert-container" aria-live="polite" aria-atomic="false"></div>
+  <!-- JavaScript principal do sistema. Toda a lógica fica em js/app.js. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js?v=20260716-auditoria-v1"></script>
+  <script src="js/app.js?v=20260717-preview-fullscreen-v2"></script>
+  <script src="js/auth-ui.js?v=20260716-alertas-compactos-v2"></script>
+  <script src="js/bootstrap-enhance.js?v=20260712-standard-v4"></script>
+  <script>
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+
+      let recarregandoPorAtualizacao = false;
+
+      // Quando o novo Service Worker assumir o controle, recarrega uma única vez.
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (recarregandoPorAtualizacao) return;
+        recarregandoPorAtualizacao = true;
+        window.location.reload();
+      });
+
+      window.addEventListener('load', async function () {
+        try {
+          const registro = await navigator.serviceWorker.register(
+            'service-worker.js?v=20260717-preview-sem-fechar-v1',
+            { updateViaCache: 'none' }
+          );
+
+          const ativarNovaVersao = function (worker) {
+            if (!worker) return;
+            worker.addEventListener('statechange', function () {
+              if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                worker.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          };
+
+          if (registro.waiting) {
+            registro.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+
+          registro.addEventListener('updatefound', function () {
+            ativarNovaVersao(registro.installing);
+          });
+
+          const verificarAtualizacao = function () {
+            if (navigator.onLine) registro.update().catch(function () { });
+          };
+
+          // Verifica ao abrir, voltar ao app e periodicamente enquanto estiver aberto.
+          verificarAtualizacao();
+          window.addEventListener('focus', verificarAtualizacao);
+          window.addEventListener('online', verificarAtualizacao);
+          document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') verificarAtualizacao();
+          });
+          setInterval(verificarAtualizacao, 15 * 60 * 1000);
+        } catch (_) {
+          // O sistema continua funcionando normalmente mesmo sem suporte a PWA.
+        }
+      });
+    })();
+  </script>
 </body>
+
 </html>

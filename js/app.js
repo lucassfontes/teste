@@ -1,3 +1,7 @@
+/* VERSAO DO SISTEMA */
+const versao = document.getElementById("versao_sytem")
+
+versao.innerHTML = 'Versão-3.4.2'
 /**
  * ARQUIVO PRINCIPAL DO VALLE
  * ------------------------------------------------
@@ -280,41 +284,86 @@ function h(s) {
  * Mostra uma mensagem rápida na parte inferior da tela para avisar o usuário sobre ações e erros.
  */
 function toast(msg, type = 'info') {
-  const t = $('toast');
-  if (!t) return;
+  const container = $('toastContainer');
+  if (!container) return;
 
-  const texto = String(msg || '').trim();
+  const original = String(msg || '').trim();
+  if (!original) return;
+
+  const key = original.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const mensagens = {
+    'CLIENTE SALVO': 'Cliente salvo com sucesso!',
+    'CLIENTE ADICIONADO': 'Cliente salvo com sucesso!',
+    'CLIENTE ATUALIZADO': 'Cliente atualizado com sucesso!',
+    'CLIENTE ALTERADO': 'Cliente atualizado com sucesso!',
+    'CLIENTE EXCLUIDO': 'Cliente excluído com sucesso!',
+    'VALE SALVO': 'Vale criado com sucesso!',
+    'VALLE SALVO': 'Vale criado com sucesso!',
+    'VALE SALVO NO HISTORICO': 'Vale criado com sucesso!',
+    'VALE CRIADO': 'Vale criado com sucesso!',
+    'VALE ALTERADO': 'Vale atualizado com sucesso!',
+    'ALTERACOES SALVAS': 'Vale atualizado com sucesso!',
+    'VALE ATUALIZADO': 'Vale atualizado com sucesso!',
+    'VALE EXCLUIDO': 'Vale excluído com sucesso!',
+    'PAGAMENTO PARCIAL REGISTRADO': 'Pagamento parcial registrado com sucesso!',
+    'VALE MARCADO COMO QUITADO': 'Vale quitado com sucesso!',
+    'VALE QUITADO': 'Vale quitado com sucesso!',
+    'CONFIGURACAO SALVA': 'Configurações salvas com sucesso!',
+    'PDF BAIXADO. ABRA O ARQUIVO PARA IMPRIMIR': 'PDF gerado com sucesso!',
+    'PDF ABERTO. USE IMPRIMIR NO NAVEGADOR': 'PDF gerado com sucesso!',
+    'BACKUP RESTAURADO': 'Backup restaurado com sucesso!',
+    'BACKUP AUTOMATICO RESTAURADO': 'Backup restaurado com sucesso!'
+  };
+
+  const texto = mensagens[key] || original;
   const lower = texto.toLowerCase();
-
   let kind = type || 'info';
-  if (type === 'info') {
-    if (lower.includes('erro') || lower.includes('inválido') || lower.includes('sem telefone') || lower.includes('não encontrado') || lower.includes('não') || lower.includes('cancelado')) {
-      kind = 'error';
-    } else if (lower.includes('digite') || lower.includes('informe') || lower.includes('atenção') || lower.includes('cadastre')) {
-      kind = 'warn';
-    } else if (lower.includes('salvo') || lower.includes('alterado') || lower.includes('registrado') || lower.includes('restaurado') || lower.includes('adicionado') || lower.includes('quitado')) {
+
+  if (kind === 'info') {
+    if (lower.includes('com sucesso') || lower.includes('salvo') || lower.includes('atualizado') || lower.includes('registrado') || lower.includes('restaurado') || lower.includes('adicionado') || lower.includes('quitado') || lower.includes('criado') || lower.includes('excluído')) {
       kind = 'success';
+    } else if (lower.includes('erro') || lower.includes('inválido') || lower.includes('sem telefone') || lower.includes('não encontrado') || lower.includes('falha')) {
+      kind = 'error';
+    } else if (lower.includes('digite') || lower.includes('informe') || lower.includes('atenção') || lower.includes('cadastre') || lower.includes('já existe') || lower.includes('nenhuma alteração')) {
+      kind = 'warn';
     }
   }
 
-  clearTimeout(toast.timer);
-  t.className = `toast ${kind}`;
-  t.innerHTML = `<span>${h(texto)}</span><button type="button" class="toast-close" aria-label="Fechar aviso">×</button>`;
-  t.style.display = 'block';
+  const styles = {
+    success: { variant: 'success', icon: 'bi-check-circle-fill' },
+    error:   { variant: 'danger',  icon: 'bi-x-circle-fill' },
+    warn:    { variant: 'warning', icon: 'bi-exclamation-triangle-fill' },
+    info:    { variant: 'primary', icon: 'bi-info-circle-fill' },
+    secondary: { variant: 'secondary', icon: 'bi-info-circle-fill' }
+  };
+  const selected = styles[kind] || styles.info;
 
-  const close = () => {
-    t.classList.remove('show');
-    clearTimeout(toast.hideTimer);
-    toast.hideTimer = setTimeout(() => {
-      if (!t.classList.contains('show')) t.style.display = 'none';
-    }, 300);
+  const alert = document.createElement('div');
+  alert.className = `alert alert-${selected.variant} alert-dismissible fade show app-bootstrap-alert shadow-sm`;
+  alert.setAttribute('role', 'alert');
+  alert.innerHTML = `
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi ${selected.icon} flex-shrink-0" aria-hidden="true"></i>
+      <div class="flex-grow-1 app-bootstrap-alert-message"></div>
+      <button type="button" class="btn-close flex-shrink-0" data-bs-dismiss="alert" aria-label="Fechar"></button>
+    </div>`;
+  alert.querySelector('.app-bootstrap-alert-message').textContent = texto;
+
+  container.prepend(alert);
+  requestAnimationFrame(() => alert.classList.add('app-alert-entered'));
+
+  const remover = () => {
+    if (!alert.isConnected) return;
+    alert.classList.add('app-alert-leaving');
+    alert.classList.remove('show');
+    setTimeout(() => alert.remove(), 260);
   };
 
-  const btn = t.querySelector('.toast-close');
-  if (btn) btn.onclick = close;
-
-  requestAnimationFrame(() => t.classList.add('show'));
-  toast.timer = setTimeout(close, 4000);
+  const timer = setTimeout(remover, 3400);
+  alert.addEventListener('closed.bs.alert', () => {
+    clearTimeout(timer);
+    alert.remove();
+  }, { once: true });
 }
 
 /**
@@ -623,6 +672,29 @@ function clearLoan() {
   markLoanFormClean();
 }
 
+
+function valleElectronicSignature(){
+  const p=window.ValleCloud?.profile||{};
+  const at=new Date().toISOString();
+  return { userId:p.id||'local', userName:p.name||p.email||'USUÁRIO LOCAL', userEmail:p.email||'', role:p.role||'local', signedAt:at };
+}
+function valleAuditDiff(before,after){
+  const ignored=new Set(['ultimaAssinaturaEletronica','assinaturaEletronica','editadoEm','criadoEm']);
+  const labels={nome:'Nome',cliente:'Cliente',telefone:'Telefone',cpf:'CPF',obs:'Observação',observacao:'Observação',valor:'Valor emprestado',total:'Valor a receber',juros:'Taxa de juros',taxaAtrasoDiario:'Taxa de atraso diária',tipoTaxaAtrasoDiario:'Tipo da taxa de atraso',dataInicial:'Data inicial',dataFinal:'Data final',status:'Status',principalRecebido:'Principal recebido',jurosRecebidos:'Juros recebidos',parcialRecebido:'Pagamento parcial acumulado',listaNegra:'Lista negra'};
+  const out={}; const keys=new Set([...Object.keys(before||{}),...Object.keys(after||{})]);
+  keys.forEach(k=>{if(ignored.has(k))return;const a=before?.[k],b=after?.[k];if(JSON.stringify(a)!==JSON.stringify(b))out[k]={label:labels[k]||k,anterior:a??null,novo:b??null}});
+  return out;
+}
+function valleAudit(action,type,record,extra={}){
+  try{
+    const names={CRIAR_CLIENTE:['CLIENTES','Novo cliente criado'],ATUALIZAR_CLIENTE:['CLIENTES','Cliente atualizado'],EXCLUIR_CLIENTE:['CLIENTES','Cliente excluído'],CRIAR_VALE:['VALES','Novo vale criado'],ATUALIZAR_VALE:['VALES','Vale atualizado'],EXCLUIR_VALE:['VALES','Vale excluído'],QUITAR_VALE:['PAGAMENTOS','Vale quitado'],PAGAMENTO_PARCIAL:['PAGAMENTOS','Pagamento parcial registrado'],PAGAMENTO_JUROS:['PAGAMENTOS','Pagamento de juros registrado'],NAO_PAGOU:['PAGAMENTOS','Não pagamento registrado'],LISTA_NEGRA:['CLIENTES','Cliente adicionado à lista negra']};
+    const key=String(action||'').toUpperCase(); const meta=names[key]||[String(type||'SISTEMA').toUpperCase(),'Ação registrada'];
+    const before=extra.old_data||null,after=extra.new_data||record||null,changes=extra.changes||valleAuditDiff(before,after);
+    const user=window.ValleCloud?.profile?.name||'Usuário'; const target=record?.numero?`Vale #${record.numero}`:(record?.nome||record?.cliente||record?.id||'registro');
+    window.ValleCloud?.recordAudit?.(key,type,record?.id||'',{module:meta[0],title:extra.title||meta[1],description:extra.description||`${user}: ${meta[1]} — ${target}.`,client_name:record?.cliente||record?.nome||'',vale_number:record?.numero||null,old_data:before,new_data:after,changes,...extra});
+  }catch(e){console.warn(e)}
+}
+
 /**
  * Calcula o total com juros e atualiza o badge de dias entre data inicial e final.
  */
@@ -662,7 +734,9 @@ function currentLoan() {
     principalRecebido: Number(old?.principalRecebido || 0),
     jurosRecebidos: Number(old?.jurosRecebidos || 0),
     parcialRecebido: Number(old?.parcialRecebido || 0),
-    criadoEm: old?.criadoEm || new Date().toISOString()
+    criadoEm: old?.criadoEm || new Date().toISOString(),
+    assinaturaEletronica: old?.assinaturaEletronica || valleElectronicSignature(),
+    ultimaAssinaturaEletronica: valleElectronicSignature()
   };
 }
 
@@ -683,7 +757,8 @@ function validateLoan(v) {
 function ensureClientByLoan(v) {
   let c = clienteByName(v.cliente);
   if (!c) {
-    c = { id: 'C' + Date.now(), nome: v.cliente, telefone: '', cpf: '', obs: '' };
+    c = { id: 'C' + Date.now(), nome: v.cliente, telefone: '', cpf: '', obs: '', criadoEm:new Date().toISOString(), assinaturaEletronica:valleElectronicSignature() };
+    valleAudit('CRIAR_CLIENTE','cliente',c,{new_data:c,origem:'cadastro automático pelo vale'});
     db.clientes.push(c);
   }
   v.clienteId = c.id;
@@ -704,11 +779,14 @@ function saveLoan() {
   if (editLoanId) {
     const i = db.vales.findIndex(x => x.id === editLoanId);
     if (i < 0) { toast('VALE NÃO ENCONTRADO'); return null; }
+    const anterior = JSON.parse(JSON.stringify(db.vales[i]));
     db.vales[i] = { ...db.vales[i], ...v, valorOriginal: v.valor, totalOriginal: v.total, editadoEm: new Date().toISOString() };
+    valleAudit('ATUALIZAR_VALE','vale',db.vales[i],{old_data:anterior,new_data:db.vales[i]});
     toast('VALE ALTERADO');
   } else {
     v.numero = db.settings.seq++;
     db.vales.unshift(v);
+    valleAudit('CRIAR_VALE','vale',v,{new_data:v});
     toast('VALLE SALVO');
   }
   editLoanId = null;
@@ -954,13 +1032,17 @@ function saveClient() {
     telefone: phoneMask($('cliTelefone').value),
     cpf: cpfMask($('cliCpf').value),
     obs: upper($('cliObs').value),
-    vip: !!(clienteById(id)?.vip)
+    vip: !!(clienteById(id)?.vip),
+    criadoEm: clienteById(id)?.criadoEm || new Date().toISOString(),
+    assinaturaEletronica: clienteById(id)?.assinaturaEletronica || valleElectronicSignature(),
+    ultimaAssinaturaEletronica: valleElectronicSignature()
   };
   if (!c.nome) { toast('DIGITE O NOME'); return false; }
   const duplicated = db.clientes.find(x => x.nome === c.nome && x.id !== id);
   if (duplicated) { toast('JÁ EXISTE CLIENTE COM ESSE NOME'); return false; }
   const idx = db.clientes.findIndex(x => x.id === id);
   if (idx >= 0) {
+    const anterior = JSON.parse(JSON.stringify(db.clientes[idx]));
     const oldName = db.clientes[idx].nome;
     db.clientes[idx] = c;
     db.vales.forEach(v => {
@@ -968,9 +1050,11 @@ function saveClient() {
         v.clienteId = id; v.cliente = c.nome; v.telefone = c.telefone; v.cpf = c.cpf;
       }
     });
+    valleAudit('ATUALIZAR_CLIENTE','cliente',c,{old_data:anterior,new_data:c});
     toast('CLIENTE ATUALIZADO');
   } else {
     db.clientes.push(c);
+    valleAudit('CRIAR_CLIENTE','cliente',c,{new_data:c});
     toast('CLIENTE SALVO');
   }
   save();
@@ -1021,8 +1105,11 @@ async function deleteClient(id) {
     cancelText: 'Cancelar'
   });
   if (!ok) return;
+  const removido=db.clientes.find(c=>c.id===id);
   db.clientes = db.clientes.filter(c => c.id !== id);
+  if(removido)valleAudit('EXCLUIR_CLIENTE','cliente',removido,{old_data:removido});
   save(); renderAll();
+  toast('CLIENTE EXCLUÍDO');
 }
 
 /**
@@ -1060,8 +1147,11 @@ async function deleteLoan(id) {
     cancelText: 'Cancelar'
   });
   if (!ok) return;
+  const removido=db.vales.find(v=>v.id===id);
   db.vales = db.vales.filter(v => v.id !== id);
+  if(removido)valleAudit('EXCLUIR_VALE','vale',removido,{old_data:removido});
   save(); renderAll();
+  toast('VALE EXCLUÍDO');
 }
 /**
  * Alterna o status do vale entre ABERTO e PAGO/RECEBIDO.
@@ -1256,10 +1346,9 @@ function openReceiveModal(id, editing = false) {
       </div>
 
       <div class="row g-2">
-        <div class="col-6"><button id="receiveRemoveBtn" type="button" class="btn btn-outline-danger w-100" onclick="receiveRemover('${v.id}')"><i class="bi bi-trash3"></i><span>Excluir</span></button></div>
-        <div class="col-6"><button id="receiveEditBtn" type="button" class="btn btn-outline-primary w-100" onclick="${editing ? `saveReceiveModalEdit('${v.id}')` : `openReceiveModal('${v.id}', true)`}"><i class="bi ${editing ? 'bi-floppy' : 'bi-pencil-square'}"></i><span>${editing ? 'Salvar' : 'Editar'}</span></button></div>
-        
-        
+        <div class="col-12 col-md"><button id="receiveEditBtn" type="button" class="btn btn-outline-primary w-100" onclick="${editing ? `saveReceiveModalEdit('${v.id}')` : `openReceiveModal('${v.id}', true)`}"><i class="bi ${editing ? 'bi-floppy' : 'bi-pencil-square'}"></i><span>${editing ? 'Salvar alterações' : 'Editar'}</span></button></div>
+        <div class="col-12 col-md"><button id="receiveCloseBtn" type="button" class="btn btn-outline-secondary w-100" onclick="closeReceiveModal()"><i class="bi bi-x-lg"></i><span>Fechar</span></button></div>
+        <div class="col-12 col-md"><button id="receiveRemoveBtn" type="button" class="btn btn-outline-danger w-100" onclick="receiveRemover('${v.id}')"><i class="bi bi-trash3"></i><span>Remover registro</span></button></div>
       </div>
     </div>`
 
@@ -1333,8 +1422,10 @@ function receiveQuitado(id) {
   if (!v) return;
   if (Number(v.valorOriginal || 0) <= 0) v.valorOriginal = originalLoanValue(v);
   if (Number(v.totalOriginal || 0) <= 0) v.totalOriginal = originalLoanTotal(v);
+  const anterior=JSON.parse(JSON.stringify(v));
   v.status = 'PAGO';
   v.ultimoRecebimento = 'QUITADO';
+  valleAudit('QUITAR_VALE','vale',v,{old_data:anterior,new_data:v});
   save(); closeReceiveModal(); renderAll(); toast('VALE MARCADO COMO QUITADO');
 }
 
@@ -1345,7 +1436,35 @@ function addDaysToDate(dateStr, daysToAdd) {
   return inputDate(base);
 }
 
+let partialPaymentValeId = null;
+
 function showReceiveParcialField(id) {
+  const v = db.vales.find(x => x.id === id);
+  if (!v) {
+    toast('VALE NÃO ENCONTRADO');
+    return;
+  }
+
+  partialPaymentValeId = id;
+  const receiveModalEl = $('receiveModal');
+
+  // O Bootstrap mantém uma trava de foco no modal aberto. Por isso, fechamos
+  // corretamente o modal de recebimento antes de abrir o pagamento parcial.
+  // Sem isso, o campo e os botões do pagamento parcial podem não responder.
+  if (window.bootstrap?.Modal && receiveModalEl) {
+    const instance = window.bootstrap.Modal.getInstance(receiveModalEl);
+    if (instance) {
+      const abrirQuandoFechar = () => {
+        receiveModalEl.removeEventListener('hidden.bs.modal', abrirQuandoFechar);
+        openPartialPaymentModal(id);
+      };
+      receiveModalEl.addEventListener('hidden.bs.modal', abrirQuandoFechar, { once: true });
+      instance.hide();
+      return;
+    }
+  }
+
+  closeReceiveModal();
   openPartialPaymentModal(id);
 }
 
@@ -1377,22 +1496,32 @@ function openPartialPaymentModal(id) {
     </div>
 
     <div class="partial-payment-actions">
-      <button class="btn light" onclick="cancelReceiveParcial()">CANCELAR</button>
-      <button class="btn success" onclick="receiveParcial('${v.id}')">CONFIRMAR PAGAMENTO</button>
+      <button type="button" class="btn btn-outline-secondary" onclick="cancelReceiveParcial()">
+        <i class="bi bi-x-lg me-1"></i>CANCELAR
+      </button>
+      <button type="button" class="btn btn-success" onclick="receiveParcial('${v.id}')">
+        <i class="bi bi-check2-circle me-1"></i>CONFIRMAR PAGAMENTO
+      </button>
     </div>`;
 
   modal.classList.add('show');
+  modal.setAttribute('aria-hidden', 'false');
   document.body.classList.add('partial-payment-open');
   setTimeout(() => $('receiveParcialValor')?.focus(), 80);
 }
 
 function cancelReceiveParcial() {
+  const id = partialPaymentValeId;
   closePartialPaymentModal();
+  if (id) setTimeout(() => openReceiveModal(id, false), 80);
 }
 
 function closePartialPaymentModal() {
   const modal = $('partialPaymentModal');
-  if (modal) modal.classList.remove('show');
+  if (modal) {
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+  }
   document.body.classList.remove('partial-payment-open');
 }
 
@@ -1415,6 +1544,7 @@ function receiveSoJuros(id) {
   const observacaoAtual = String(v.observacao || '').trim();
   v.observacao = observacaoAtual ? `${observacaoAtual}\n${novoRegistroObs}` : novoRegistroObs;
 
+  valleAudit('PAGAMENTO_JUROS','vale',v,{new_data:v,valor_pago:juros});
   save(); closeReceiveModal(); renderAll(); toast('JUROS REGISTRADO E VENCIMENTO ADIADO POR MAIS 30 DIAS');
 }
 
@@ -1471,8 +1601,10 @@ function receiveParcial(id) {
   if (loanTotalBalance(v) <= 0) v.status = 'PAGO';
   else v.status = 'ABERTO';
 
+  valleAudit('PAGAMENTO_PARCIAL','vale',v,{new_data:v,valor_pago:valorRecebido,saldo_anterior:totalAtual,saldo_novo:loanTotalBalance(v),description:`Pagamento parcial de ${money(valorRecebido)} no Vale #${v.numero||v.id}. Saldo: ${money(totalAtual)} → ${money(loanTotalBalance(v))}.`});
   save();
   closePartialPaymentModal();
+  partialPaymentValeId = null;
   closeReceiveModal();
   renderAll();
   toast('PAGAMENTO PARCIAL REGISTRADO');
@@ -1483,6 +1615,7 @@ function receiveNaoPagou(id) {
   if (!v) return;
   v.status = 'ABERTO';
   v.ultimoRecebimento = 'NÃO PAGOU';
+  valleAudit('NAO_PAGOU','vale',v,{new_data:v});
   save(); closeReceiveModal(); renderAll(); toast('VALE CONTINUA EM ABERTO');
 }
 
@@ -1492,6 +1625,7 @@ function receiveListaNegra(id) {
   v.listaNegra = true;
   const c = clienteById(v.clienteId) || clienteByName(v.cliente);
   if (c && !String(c.obs || '').includes('LISTA NEGRA')) c.obs = String(c.obs || '').trim() + (c.obs ? ' | ' : '') + 'LISTA NEGRA';
+  valleAudit('LISTA_NEGRA','cliente',c||v,{new_data:c||v});
   save(); closeReceiveModal(); renderAll(); toast('CLIENTE ADICIONADO À LISTA NEGRA');
 }
 
@@ -1611,7 +1745,7 @@ function renderClients() {
     .filter(c => [c.nome, c.telefone, c.cpf, c.obs, c.label].join(' ').toUpperCase().includes(q))
     .sort((a,b) => Number(b.vip)-Number(a.vip) || Number(b.abertoValor||0)-Number(a.abertoValor||0) || String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR'));
 
-  container.className = 'clientes-premium-list';
+  container.className = 'clientes-bootstrap-list';
   container.innerHTML = arr.length ? arr.map(c => {
     const id = String(c.id || '').replace(/'/g,"\\'");
     const scoreClass = c.classe || 'regular';
@@ -1620,41 +1754,56 @@ function renderClients() {
     const ultimoPg = c.ultimoPagamento ? brDate(c.ultimoPagamento) : 'SEM PAGAMENTO';
     const obs = c.obs || '';
     const inicial = h((c.nome || '?').trim().slice(0,1));
+    const statusMap = {
+      excelente: {badge:'success', icon:'bi-shield-check'},
+      bom: {badge:'primary', icon:'bi-hand-thumbs-up'},
+      regular: {badge:'warning', icon:'bi-dash-circle'},
+      atencao: {badge:'warning', icon:'bi-exclamation-triangle'},
+      risco: {badge:'danger', icon:'bi-exclamation-octagon'}
+    };
+    const status = statusMap[scoreClass] || statusMap.regular;
     return `
-      <article class="cliente-line-card ${scoreClass}${c.vip ? ' vip' : ''}">
-        <div class="cliente-line-head">
-          <div class="cliente-title-wrap">
-            <div class="cliente-avatar">${inicial}</div>
-            <div>
-              <h3>${h(c.nome || 'SEM NOME')}</h3>
-              <p>${c.vip ? '⭐ CLIENTE VIP • ' : ''}${h(tel)} • CPF: ${h(cpf)}</p>
+      <article class="card cliente-bs-card border-${status.badge} border-start border-4 shadow-sm">
+        <div class="card-body p-3">
+          <div class="d-flex flex-column flex-md-row align-items-md-start justify-content-between gap-2 pb-2 border-bottom">
+            <div class="d-flex align-items-start gap-2 min-w-0">
+              <div class="cliente-bs-avatar bg-primary-subtle text-primary border border-primary-subtle">${inicial}</div>
+              <div class="min-w-0">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                  <h3 class="h5 mb-0 text-break">${h(c.nome || 'SEM NOME')}</h3>
+                  ${c.vip ? '<span class="badge text-bg-warning"><i class="bi bi-star-fill me-1"></i>VIP</span>' : ''}
+                </div>
+                <div class="cliente-bs-contact text-body-secondary mt-1 d-flex flex-wrap gap-2 gap-md-3">
+                  <span><i class="bi bi-telephone me-1"></i>${h(tel)}</span>
+                  <span><i class="bi bi-person-vcard me-1"></i>CPF: ${h(cpf)}</span>
+                </div>
+              </div>
+            </div>
+            <div class="cliente-bs-status badge text-bg-${status.badge} align-self-start">
+              <i class="bi ${status.icon} me-1"></i>${h(c.label || 'SEM HISTÓRICO')}
             </div>
           </div>
-          <div class="cliente-status">
-            <strong>${h(c.stars || '☆☆☆☆☆')}</strong>
-            <span>${h(c.label || 'SEM HISTÓRICO')}</span>
+
+          <div class="row g-2 py-2">
+            <div class="col-6 col-xl-3"><div class="cliente-bs-stat h-100 border rounded-3 p-2"><small class="text-body-secondary d-block"><i class="bi bi-receipt me-1"></i>VALES</small><strong class="d-block mt-1">${Number(c.qtd || 0)}</strong></div></div>
+            <div class="col-6 col-xl-3"><div class="cliente-bs-stat h-100 border rounded-3 p-2"><small class="text-body-secondary d-block"><i class="bi bi-cash-stack me-1"></i>TOTAL EMPRESTADO</small><strong class="d-block mt-1">${money(c.totalEmprestado || 0)}</strong></div></div>
+            <div class="col-6 col-xl-3"><div class="cliente-bs-stat h-100 border rounded-3 p-2"><small class="text-body-secondary d-block"><i class="bi bi-wallet2 me-1"></i>EM ABERTO</small><strong class="d-block mt-1">${money(c.abertoValor || 0)}</strong></div></div>
+            <div class="col-6 col-xl-3"><div class="cliente-bs-stat h-100 border rounded-3 p-2"><small class="text-body-secondary d-block"><i class="bi bi-calendar-check me-1"></i>ÚLTIMO PAGAMENTO</small><strong class="d-block mt-1">${h(ultimoPg)}</strong></div></div>
+          </div>
+
+          ${obs ? `<div class="alert alert-secondary py-2 px-3 mb-2"><i class="bi bi-journal-text me-2"></i>${h(obs)}</div>` : ''}
+
+          <div class="d-flex flex-wrap justify-content-end gap-2 pt-0">
+            <button type="button" class="btn btn-primary btn-sm" onclick="useClient('${id}')"><i class="bi bi-plus-circle"></i> USAR</button>
+            <button type="button" class="btn btn-warning btn-sm" onclick="editClient('${id}')"><i class="bi bi-pencil-square"></i> EDITAR</button>
+            <button type="button" class="btn btn-success btn-sm" onclick="openWhatsClient('${id}')"><i class="bi bi-whatsapp"></i> WHATSAPP</button>
+            <button type="button" class="btn btn-info btn-sm text-white" onclick="callClient('${id}')"><i class="bi bi-telephone-fill"></i> LIGAR</button>
+            <button type="button" class="btn btn-outline-warning btn-sm" onclick="toggleVipClient('${id}')"><i class="bi ${c.vip ? 'bi-star-fill' : 'bi-star'}"></i> VIP</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="deleteClient('${id}')"><i class="bi bi-trash3"></i> EXCLUIR</button>
           </div>
         </div>
-
-        <div class="cliente-info-row">
-          <div class="cliente-info-item"><span>📄</span><small>VALLE</small><b>${Number(c.qtd || 0)}</b></div>
-          <div class="cliente-info-item"><span>💰</span><small>VALLE</small><b>${money(c.totalEmprestado || 0)}</b></div>
-          <div class="cliente-info-item"><span>💵</span><small>Em aberto</small><b>${money(c.abertoValor || 0)}</b></div>
-          <div class="cliente-info-item"><span>📅</span><small>Último pagamento</small><b>${h(ultimoPg)}</b></div>
-        </div>
-
-        ${obs ? `<div class="cliente-obs-line"><span>📝</span><p>${h(obs)}</p></div>` : ''}
-
-        <div class="cliente-line-actions">
-          <button type="button" class="usar" onclick="useClient('${id}')">➕ USAR</button>
-          <button type="button" class="editar" onclick="editClient('${id}')">✏️ EDITAR</button>
-          <button type="button" class="whats" onclick="openWhatsClient('${id}')">🟢 WHATSAPP</button>
-          <button type="button" class="ligar" onclick="callClient('${id}')">📞 LIGAR</button>
-          <button type="button" class="vip" onclick="toggleVipClient('${id}')">${c.vip ? '⭐ VIP' : '☆ VIP'}</button>
-          <button type="button" class="excluir" onclick="deleteClient('${id}')">🗑️ EXCLUIR</button>
-        </div>
       </article>`;
-  }).join('') : '<p class="empty cliente-empty">NENHUM CLIENTE ENCONTRADO.</p>';
+  }).join('') : '<div class="alert alert-secondary text-center mb-0"><i class="bi bi-people me-2"></i>NENHUM CLIENTE ENCONTRADO.</div>';
 }
 
 
@@ -1731,31 +1880,50 @@ function renderHistory() {
     const obs = String(v.observacao || '').trim();
     const ultimaObs = obs ? obs.split(/\n+/).map(x => x.trim()).filter(Boolean).slice(-1)[0] : '';
 
-    return `<article class="hist-loan-card ${st.cls}">
-      <div class="hist-loan-status-row">
-        <span class="hist-loan-badge ${st.cls}">${h(st.badge)}</span>
-        <span class="hist-loan-days">${h(st.desc)}</span>
-      </div>
+    const statusMap = {
+      paid: {badge:'success', icon:'bi-check-circle-fill'},
+      danger: {badge:'danger', icon:'bi-exclamation-octagon-fill'},
+      today: {badge:'warning', icon:'bi-alarm-fill'},
+      week: {badge:'warning', icon:'bi-calendar-event-fill'}
+    };
+    const status = statusMap[st.cls] || statusMap.week;
+    const inicial = h((v.cliente || '?').trim().slice(0,1));
 
-      <div class="hist-loan-content">
-        <div class="hist-loan-client">
-          <h3>${h(v.cliente || 'CLIENTE')}</h3>
-          <p>📞 ${h(telefone || 'SEM TELEFONE')}</p>
-          ${ultimaObs ? `<small>💬 ${h(ultimaObs)}</small>` : ''}
+    return `<article class="card historico-bs-card border-${status.badge} border-start border-4 shadow-sm">
+      <div class="card-body p-3">
+        <div class="d-flex flex-column flex-md-row align-items-md-start justify-content-between gap-2 pb-2 border-bottom">
+          <div class="d-flex align-items-start gap-2 min-w-0">
+            <div class="historico-bs-avatar bg-primary-subtle text-primary border border-primary-subtle">${inicial}</div>
+            <div class="min-w-0">
+              <h3 class="h5 mb-0 text-break">${h(v.cliente || 'CLIENTE')}</h3>
+              <div class="historico-bs-contact text-body-secondary mt-1 d-flex flex-wrap gap-2 gap-md-3">
+                <span><i class="bi bi-telephone me-1"></i>${h(telefone || 'SEM TELEFONE')}</span>
+                <span><i class="bi bi-receipt me-1"></i>VALE #${h(numeroVale)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="historico-bs-status badge text-bg-${status.badge} align-self-start">
+            <i class="bi ${status.icon} me-1"></i>${h(st.badge)}
+            <small class="d-block mt-1">${h(st.desc)}</small>
+          </div>
         </div>
 
-        <div class="hist-loan-info"><small>Nº do Vale</small><b>#${h(numeroVale)}</b></div>
-        <div class="hist-loan-info venc"><small>Vencimento</small><b>${brDate(v.dataFinal)}</b></div>
-        <div class="hist-loan-info total"><small>Valor Total</small><b>${money(total)}</b></div>
-        <div class="hist-loan-info aberto"><small>Valor em Aberto</small><b>${money(aberto)}</b></div>
+        <div class="row g-2 py-2">
+          <div class="col-6 col-xl-3"><div class="historico-bs-stat h-100 border rounded-3 p-2"><small class="text-body-secondary d-block"><i class="bi bi-hash me-1"></i>Nº DO VALE</small><strong class="d-block mt-1">#${h(numeroVale)}</strong></div></div>
+          <div class="col-6 col-xl-3"><div class="historico-bs-stat h-100 border rounded-3 p-2"><small class="text-body-secondary d-block"><i class="bi bi-calendar-check me-1"></i>VENCIMENTO</small><strong class="d-block mt-1">${brDate(v.dataFinal)}</strong></div></div>
+          <div class="col-6 col-xl-3"><div class="historico-bs-stat h-100 border rounded-3 p-2"><small class="text-body-secondary d-block"><i class="bi bi-cash-stack me-1"></i>VALOR TOTAL</small><strong class="d-block mt-1">${money(total)}</strong></div></div>
+          <div class="col-6 col-xl-3"><div class="historico-bs-stat h-100 border rounded-3 p-2"><small class="text-body-secondary d-block"><i class="bi bi-wallet2 me-1"></i>EM ABERTO</small><strong class="d-block mt-1">${money(aberto)}</strong></div></div>
+        </div>
 
-        <div class="hist-loan-actions">
-          <button class="whats" onclick="openWhatsLoan('${v.id}')">💬 WhatsApp</button>
-          <button class="pdf" onclick="downloadLoanPdf('${v.id}')">📄 PDF</button>
-          <button class="receber" onclick="openReceiveModal('${v.id}')">💵 Receber</button>
-          <button class="abrir" onclick="abrirValeHistorico('${v.id}')">🔓 Abrir Vale</button>
-          <button class="editar" onclick="editLoan('${v.id}')">✏️ Editar</button>
-          <button class="excluir" onclick="deleteLoan('${v.id}')">🗑️ Excluir</button>
+        ${ultimaObs ? `<div class="alert alert-secondary py-2 px-3 mb-2"><i class="bi bi-chat-left-text me-2"></i>${h(ultimaObs)}</div>` : ''}
+
+        <div class="d-flex flex-wrap justify-content-end gap-2 pt-0 historico-bs-actions">
+          <button type="button" class="btn btn-success btn-sm" onclick="openWhatsLoan('${v.id}')"><i class="bi bi-whatsapp"></i> WHATSAPP</button>
+          <button type="button" class="btn btn-danger btn-sm" onclick="downloadLoanPdf('${v.id}')"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="openReceiveModal('${v.id}')"><i class="bi bi-cash-coin"></i> RECEBER</button>
+          <button type="button" class="btn btn-info btn-sm text-white" onclick="abrirValeHistorico('${v.id}')"><i class="bi bi-unlock"></i> ABRIR VALE</button>
+          <button type="button" class="btn btn-warning btn-sm" onclick="editLoan('${v.id}')"><i class="bi bi-pencil-square"></i> EDITAR</button>
+          <button type="button" class="btn btn-danger btn-sm" onclick="deleteLoan('${v.id}')"><i class="bi bi-trash3"></i> EXCLUIR</button>
         </div>
       </div>
     </article>`;
@@ -1885,11 +2053,11 @@ function renderDashboard() {
 }
 
 /**
- * Salva capital investido e percentual dos juros configurável no localStorage.
+ * Salva o capital investido da sessão. O juros é configurado individualmente
+ * no painel Administrar usuário de serviço.
  */
 function saveDashboardConfig() {
   db.settings.capitalInvestido = moneyNum($('configCapitalInvestido')?.value || '0');
-  // Juros e taxa de atraso são configurados individualmente no cadastro de cada usuário de serviço.
   save();
   renderAll();
   toast('CONFIGURAÇÃO SALVA');
@@ -2229,6 +2397,36 @@ function renderAll() {
  * Limpa textos para colocar dentro do PDF manual sem quebrar a estrutura do arquivo.
  */
 function pdfEscape(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7E]/g, '').replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)'); }
+
+/** Retorna o usuário autenticado e o instante exato em que o PDF foi gerado. */
+function pdfGeneratedByInfo() {
+  const profile = window.ValleCloud?.profile || null;
+  let cachedProfile = null;
+
+  // Fallback para a sessão já salva localmente pelo próprio ValleCloud.
+  if (!profile) {
+    try {
+      const authKey = Object.keys(localStorage).find(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
+      const authData = authKey ? JSON.parse(localStorage.getItem(authKey) || '{}') : null;
+      const userId = authData?.user?.id || authData?.currentSession?.user?.id || '';
+      if (userId) cachedProfile = JSON.parse(localStorage.getItem(`profile_${userId}`) || 'null');
+    } catch (_) {}
+  }
+
+  const source = profile || cachedProfile || window.usuarioLogado || window.currentUser || {};
+  const nome = String(
+    source.name || source.nome || source.full_name || source.user_name ||
+    source.email || 'USUARIO NAO IDENTIFICADO'
+  ).trim();
+  const agora = new Date();
+
+  return {
+    nome,
+    data: agora.toLocaleDateString('pt-BR'),
+    hora: agora.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', second:'2-digit' }),
+    texto: `Gerado por: ${nome} - ${agora.toLocaleDateString('pt-BR')} as ${agora.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', second:'2-digit' })}`
+  };
+}
 /**
  * Gera o PDF profissional do vale usando comandos internos do formato PDF.
  */
@@ -2416,9 +2614,13 @@ function makePdf(v) {
   txt('ASSINATURA DO CLIENTE', 84, 166, 11, 1, '#4b5563');
   line(122, 132, W - 122, 132, '#111827', 1.1);
 
-  // Rodapé
+  // Rodapé: nome do usuário autenticado, data e hora, em uma única linha.
   line(58, 88, W - 58, 88, '#0b2f63', 2);
-  txt('Vale gerado pelo sistema de controle de clientes.', 82, 62, 10, 0, '#334155');
+  const infoGeracaoPdf = pdfGeneratedByInfo();
+  const textoGeracaoPdf = infoGeracaoPdf.texto;
+  let tamanhoRodapePdf = 9;
+  while (textWidth(textoGeracaoPdf, tamanhoRodapePdf) > (W - 164) && tamanhoRodapePdf > 6.5) tamanhoRodapePdf -= 0.25;
+  txt(textoGeracaoPdf, 82, 62, tamanhoRodapePdf, 0, '#334155');
   txt('VALE No ' + numero, 418, 62, 13, 1, '#0b2f63');
 
   const stream = ops.join('\n');
@@ -2588,7 +2790,7 @@ function buildPdfPreviewHtml(v) {
       <div class="pdf-html-sign"><small>ASSINATURA DO CLIENTE</small><div></div></div>
 
       <footer class="pdf-html-footer">
-        <span>Vale gerado pelo sistema de controle de clientes.</span>
+        <span>${pdfPreviewSafe(pdfGeneratedByInfo().texto)}</span>
         <strong>VALE Nº ${numero}</strong>
       </footer>
     </section>`;
@@ -2607,29 +2809,35 @@ function ensurePdfPreviewModal() {
   modal.id = 'pdfPreviewOverlay';
   modal.className = 'pdf-preview-overlay';
   modal.innerHTML = `
-    <div class="pdf-preview-modal" role="dialog" aria-modal="true" aria-labelledby="pdfPreviewTitle">
-      <div class="pdf-preview-head">
-        <div>
-          <h3 id="pdfPreviewTitle">📄 Pré-visualização do vale</h3>
-          <small id="pdfPreviewSub">Confira o PDF antes de baixar ou imprimir</small>
+    <div class="pdf-preview-modal card border-0 shadow-lg bootstrap-only-ui" role="dialog" aria-modal="true" aria-labelledby="pdfPreviewTitle">
+      <div class="pdf-preview-head card-header d-flex align-items-center gap-3">
+        <span class="pdf-preview-head-icon d-inline-flex align-items-center justify-content-center flex-shrink-0" aria-hidden="true">
+          <i class="bi bi-file-earmark-pdf-fill"></i>
+        </span>
+        <div class="pdf-preview-head-copy flex-grow-1 min-w-0">
+          <h3 id="pdfPreviewTitle" class="mb-1">PRÉ-VISUALIZAÇÃO DO VALE</h3>
+          <small id="pdfPreviewSub">CONFIRA O DOCUMENTO ANTES DE BAIXAR OU IMPRIMIR</small>
         </div>
-        <button type="button" class="pdf-preview-close" id="pdfPreviewCloseBtn" aria-label="Fechar">✕</button>
+        <span class="badge pdf-preview-head-badge d-none d-sm-inline-flex align-items-center gap-2 rounded-pill">
+          <i class="bi bi-receipt"></i> VALE
+        </span>
+        <button type="button" class="btn btn-outline-light pdf-preview-close d-inline-flex align-items-center justify-content-center" id="pdfPreviewCloseBtn" aria-label="Fechar">
+          <i class="bi bi-x-lg"></i>
+        </button>
       </div>
-      <div class="pdf-preview-body">
+      <div class="pdf-preview-body card-body">
         <div id="pdfPreviewPage" class="pdf-preview-page" aria-label="Pré-visualização visual do vale"></div>
         <iframe id="pdfPreviewFrame" class="pdf-preview-print-frame" title="Arquivo PDF para impressão"></iframe>
       </div>
-      <div class="pdf-preview-actions">
-        <button type="button" class="pdf-preview-print" id="pdfPreviewPrintBtn">🖨️ Imprimir</button>
-        <button type="button" class="pdf-preview-download" id="pdfPreviewDownloadBtn">⬇️ Baixar PDF</button>
-        <button type="button" class="pdf-preview-cancel" id="pdfPreviewCancelBtn">Fechar</button>
+      <div class="pdf-preview-actions card-footer d-flex justify-content-end gap-2 flex-wrap">
+        <button type="button" class="btn btn-primary pdf-preview-print" id="pdfPreviewPrintBtn"><i class="bi bi-printer-fill me-1"></i>IMPRIMIR</button>
+        <button type="button" class="btn btn-danger pdf-preview-download" id="pdfPreviewDownloadBtn"><i class="bi bi-file-earmark-arrow-down-fill me-1"></i>BAIXAR PDF</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
 
   const close = () => closePdfPreview();
   document.getElementById('pdfPreviewCloseBtn').onclick = close;
-  document.getElementById('pdfPreviewCancelBtn').onclick = close;
   document.getElementById('pdfPreviewDownloadBtn').onclick = () => {
     if (pdfPreviewBlob && pdfPreviewName) downloadBlob(pdfPreviewBlob, pdfPreviewName);
   };
@@ -3007,7 +3215,7 @@ function renderNotificationBootstrapCard(v) {
   return `<article class="card notification-bootstrap-item border-${statusClass}">
     <div class="card-body p-3 p-md-4">
       <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-        <div class="d-flex align-items-start gap-3 min-w-0 notification-client-wrap">
+        <div class="d-flex align-items-start gap-2 min-w-0 notification-client-wrap">
           <div class="notification-client-icon" aria-label="Inicial do cliente">${h(clienteInicial)}</div>
           <div class="min-w-0 notification-client-text">
             <h3 class="h5 mb-1 notification-client-name">${h(v.cliente)}</h3>
@@ -3375,17 +3583,22 @@ function ensureCalendarDayModal(){
   if (modal) return modal;
   modal = document.createElement('div');
   modal.id = 'calendarDayModal';
-  modal.className = 'calendar-day-modal';
+  modal.className = 'calendar-day-modal client-report-modal';
   modal.innerHTML = `
-    <div class="calendar-day-card" role="dialog" aria-modal="true" aria-labelledby="calendarDayTitle">
-      <div class="calendar-day-head">
-        <div>
-          <h3 id="calendarDayTitle">📅 Vales do dia</h3>
-          <small id="calendarDaySub">Clientes com vencimento no dia selecionado</small>
+    <div class="calendar-day-card client-report-card v35-client-report-card" role="dialog" aria-modal="true" aria-labelledby="calendarDayTitle">
+      <button type="button" class="calendar-day-close client-report-close btn btn-outline-primary" onclick="closeCalendarDayModal()" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
+      <div class="calendar-day-head v35-report-head">
+        <div class="v35-report-person">
+          <div class="v35-report-avatar"><i class="bi bi-calendar3"></i></div>
+          <div class="min-w-0">
+            <h2 id="calendarDayTitle">Vales do dia</h2>
+            <p id="calendarDaySub">Clientes com vencimento no dia selecionado</p>
+          </div>
         </div>
-        <button type="button" onclick="closeCalendarDayModal()" aria-label="Fechar">✕</button>
       </div>
-      <div id="calendarDayList" class="calendar-day-list"></div>
+      <div class="border-top my-3"></div>
+      <h3 class="v35-modal-section-title"><i class="bi bi-receipt me-2"></i>Vales com vencimento</h3>
+      <div id="calendarDayList" class="calendar-day-list v35-history-list"></div>
     </div>`;
   document.body.appendChild(modal);
   modal.addEventListener('click', e => { if (e.target === modal) closeCalendarDayModal(); });
@@ -3402,7 +3615,7 @@ function openCalendarDayModal(iso){
     .map(v => ({...v, _info:statusInfo(v)}))
     .sort((a,b)=>String(a.cliente).localeCompare(String(b.cliente),'pt-BR'));
   const total = list.reduce((s,v)=>s+loanPrincipalBalance(v),0);
-  title.textContent = `📅 ${brDate(iso)}`;
+  title.textContent = `Vales de ${brDate(iso)}`;
   sub.textContent = `${list.length} vale${list.length===1?'':'s'} • ${calendarDayLabel(iso)} • ${money(total)} em aberto`;
   listBox.innerHTML = list.length ? list.map(v => {
     const c = clienteById(v.clienteId) || clienteByName(v.cliente) || {};
@@ -3410,22 +3623,26 @@ function openCalendarDayModal(iso){
     const num = String(v.numero || '').padStart(4,'0');
     const info = statusInfo(v);
     return `
-      <div class="calendar-vale-row ${info.key}">
-        <div class="calendar-vale-main">
-          <strong>${h(v.cliente)}</strong>
-          <small>📞 ${h(tel || 'SEM TELEFONE')} • 📄 VALE Nº ${num}</small>
+      <article class="card calendar-vale-row v35-history-row ${info.key} border-${info.key === 'danger' ? 'danger' : (info.key === 'today' ? 'warning' : 'primary')} border-start border-4 shadow-sm">
+        <div class="card-body">
+          <header class="v35-vale-header calendar-vale-main">
+            <div class="min-w-0">
+              <h4><i class="bi bi-person-circle me-2"></i>${h(v.cliente)}</h4>
+              <small><i class="bi bi-telephone me-1"></i>${h(tel || 'SEM TELEFONE')} <span class="mx-1">•</span> <i class="bi bi-receipt me-1"></i>VALE Nº ${num}</small>
+            </div>
+            <span class="badge rounded-pill calendar-vale-status ${info.key}">${h(info.label)}</span>
+          </header>
+          <div class="calendar-vale-money v35-modal-loan-metrics">
+            <div class="v35-modal-stat"><small>VALOR EMPRESTADO</small><strong>${money(loanPrincipalBalance(v))}</strong></div>
+            <div class="v35-modal-stat"><small>TOTAL + ATRASO</small><strong>${money(loanTotalBalance(v))}</strong></div>
+          </div>
+          <footer class="calendar-vale-actions v35-modal-history-actions">
+            <button class="btn btn-success btn-sm" onclick="closeCalendarDayModal(); openWhatsLoan('${v.id}')"><i class="bi bi-whatsapp me-1"></i>WHATSAPP</button>
+            <button class="btn btn-danger btn-sm" onclick="closeCalendarDayModal(); downloadLoanPdf('${v.id}')"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+            <button class="btn btn-primary btn-sm" onclick="closeCalendarDayModal(); openReceiveModal('${v.id}')"><i class="bi bi-cash-coin me-1"></i>RECEBER</button>
+          </footer>
         </div>
-        <div class="calendar-vale-money">
-          <span><small>EMPRÉSTIMO</small><b>${money(loanPrincipalBalance(v))}</b></span>
-          <span><small>TOTAL + ATRASO</small><b>${money(loanTotalBalance(v))}</b></span>
-        </div>
-        <div class="calendar-vale-status ${info.key}">${h(info.label)}</div>
-        <div class="calendar-vale-actions">
-          <button class="v3-whats" onclick="closeCalendarDayModal(); openWhatsLoan('${v.id}')">💬 WhatsApp</button>
-          <button class="v3-pdf" onclick="closeCalendarDayModal(); downloadLoanPdf('${v.id}')">📄 PDF</button>
-          <button class="v3-receber" onclick="closeCalendarDayModal(); openReceiveModal('${v.id}')">💵 Receber</button>
-        </div>
-      </div>`;
+      </article>`;
   }).join('') : '<div class="empty-state">Nenhum vale neste dia.</div>';
   modal.classList.add('show');
   document.body.classList.add('calendar-modal-open');
@@ -3544,7 +3761,7 @@ function renderPremiumMiniCalendar(openVales){
     }
     html += `<div class="premium-cal-day ${cls}">${d.getDate()}${dot}</div>`;
   }
-  html += '</div><button type="button" class="ghost" onclick="switchScreen(\'calendario\')">📅 Ver calendário completo</button>';
+  html += '</div>';
   box.innerHTML = html;
 }
 function renderPremiumClientList(id, list, empty){
@@ -3678,9 +3895,9 @@ function v35ClienteStats(){
     if (pago) {
       o.pagos++;
       o.recebido += total + jurosRec;
-      const atraso = venc && dataPg ? Math.max(0, v35DaysBetween(venc, dataPg)) : 0;
-      if (atraso > 0) o.pagosAtrasados++;
-      o.maiorAtraso = Math.max(o.maiorAtraso, atraso);
+      // Vale quitado deixa de ser considerado atraso ativo no relatório.
+      // A data do pagamento continua registrada, mas não reduz o score nem
+      // permanece no contador "Atrasos" do cliente.
     } else {
       o.abertos++;
       o.abertoValor += v35LoanBalance(v);
@@ -3694,12 +3911,13 @@ function v35ClienteStats(){
     if (obsLine) o.ultimaObs = obsLine;
   });
   return Object.values(map).map(o => {
-    const totalAtrasos = o.atrasados + o.pagosAtrasados;
+    // O contador de atrasos e o score consideram somente vales vencidos
+    // que ainda não foram pagos. Ao quitar, o atraso é removido imediatamente.
+    const totalAtrasos = o.atrasados;
     const taxaPago = o.qtd ? Math.round((o.pagos/o.qtd)*100) : 0;
-    const pontual = o.pagos ? Math.max(0, Math.round(((o.pagos - o.pagosAtrasados)/o.pagos)*100)) : (o.atrasados ? 0 : 100);
+    const pontual = o.atrasados ? 0 : 100;
     let score = 100;
     score -= o.atrasados * 32;
-    score -= o.pagosAtrasados * 14;
     score -= Math.min(25, Math.floor(o.maiorAtraso / 3) * 5);
     if (o.abertoValor > 0 && o.pagos === 0 && o.qtd >= 2) score -= 10;
     if (o.qtd === 0) score = 70;
@@ -3717,9 +3935,20 @@ function v35RelEnsureLayout(){
   let root = $('v35Relatorios');
   if (!root) {
     sec.innerHTML = `<div id="v35Relatorios" class="v35-relatorios">
-      <div class="v35-rel-hero">
-        <div><small>RELATÓRIOS V3.5</small><h2>📊 Central de Relatórios</h2><p>Financeiro, ranking, histórico de clientes e análise automática de pagador.</p></div>
-        <div class="v35-rel-actions"><button onclick="renderReports()">↻ ATUALIZAR</button><button onclick="v35ExportReportCsv()">⬇ CSV</button></div>
+      <div class="card relatorios-bootstrap-card border-0 shadow-lg mb-3">
+        <div class="card-header relatorios-page-header d-flex align-items-center gap-3 bg-transparent">
+          <span class="relatorios-page-header-icon d-inline-flex align-items-center justify-content-center flex-shrink-0" aria-hidden="true">
+            <i class="bi bi-bar-chart-fill"></i>
+          </span>
+          <div class="relatorios-page-header-copy flex-grow-1 min-w-0">
+            <h2 class="card-title mb-1">RELATÓRIOS</h2>
+            <p class="card-subtitle mb-0">FINANCEIRO, RANKING, HISTÓRICO DE CLIENTES E ANÁLISE AUTOMÁTICA DE PAGADOR</p>
+          </div>
+          <span class="badge relatorios-header-badge d-none d-sm-inline-flex align-items-center gap-2 rounded-pill">
+            <i class="bi bi-file-earmark-bar-graph" aria-hidden="true"></i>
+            RELATÓRIOS
+          </span>
+        </div>
       </div>
       <div class="v35-kpis">
         <article><span>💸 Em aberto</span><strong id="v35RelAberto">R$ 0,00</strong><small>Saldo total a receber</small></article>
@@ -3765,12 +3994,48 @@ function renderReports(){
   if (q) list = list.filter(x => [x.nome,x.telefone,x.cpf,x.label,x.stars].join(' ').toUpperCase().includes(q));
   $('v35ClientesRelatorio').innerHTML = list.length ? list.map(x => {
     const initials = String(x.nome||'C').trim().split(/\s+/).slice(0,2).map(p=>p[0]).join('').toUpperCase();
-    return `<article class="v35-client-card ${x.classe}">
-      <header><div class="v35-avatar">${v35Escape(initials||'C')}</div><div><h4>${v35Escape(x.nome)}</h4><p>${v35Escape(x.telefone || 'SEM TELEFONE')} ${x.cpf ? '• CPF '+v35Escape(x.cpf) : ''}</p></div><span>${x.stars}</span></header>
-      <div class="v35-score-line"><b>${x.label}</b><em>${x.score}/100</em></div>
-      <small class="v35-desc">${v35Escape(x.desc)}</small>
-      <div class="v35-mini-metrics"><div><span>Vales</span><b>${x.qtd}</b></div><div><span>Aberto</span><b>${v35SafeMoney(x.abertoValor)}</b></div><div><span>Atrasos</span><b>${x.totalAtrasos}</b></div><div><span>Maior atraso</span><b>${x.maiorAtraso}d</b></div></div>
-      <footer><span>Último vale: ${x.ultimoVale ? v35DateBr(x.ultimoVale) : '-'}</span><button onclick="openClientReport('${v35Escape(x.key)}')">VER HISTÓRICO</button></footer>
+    const statusMap = {
+      excelente: { color: 'success', icon: 'bi-patch-check-fill' },
+      bom: { color: 'primary', icon: 'bi-hand-thumbs-up-fill', cssClass: 'relatorio-score-bom', borderColor: '#0d6efd' },
+      regular: { color: 'warning', icon: 'bi-exclamation-circle-fill' },
+      atencao: { color: 'warning', icon: 'bi-exclamation-triangle-fill' },
+      risco: { color: 'danger', icon: 'bi-shield-fill-exclamation' }
+    };
+    const status = statusMap[x.classe] || statusMap.regular;
+    const reportBorderColor = status.borderColor || `var(--bs-${status.color})`;
+    const filledStars = Math.max(0, Math.min(5, (String(x.stars || '').match(/★/g) || []).length));
+    const scoreStars = Array.from({length:5}, (_,i) => `<i class="bi ${i < filledStars ? 'bi-star-fill' : 'bi-star'}"></i>`).join('');
+    return `<article class="card relatorio-bs-client-card border-${status.color} border-start border-4 shadow-sm" style="--rel-status-color:${reportBorderColor}">
+      <div class="card-body">
+        <div class="d-flex align-items-start gap-3 relatorio-bs-head">
+          <div class="relatorio-bs-avatar bg-primary-subtle text-primary border border-primary-subtle flex-shrink-0">${v35Escape(initials||'C')}</div>
+          <div class="flex-grow-1 min-w-0">
+            <h4 class="mb-1 relatorio-cliente-nome">${v35Escape(x.nome)}</h4>
+            <div class="text-body-secondary small d-flex flex-wrap gap-2 gap-md-3">
+              <span><i class="bi bi-telephone me-1"></i>${v35Escape(x.telefone || 'SEM TELEFONE')}</span>
+              <span><i class="bi bi-person-vcard me-1"></i>${x.cpf ? 'CPF: '+v35Escape(x.cpf) : 'CPF: NÃO INFORMADO'}</span>
+            </div>
+          </div>
+          <span class="badge text-bg-${status.color} rounded-pill relatorio-bs-status ${status.cssClass || ''}" aria-label="${x.label}: ${filledStars} de 5 estrelas">
+            <span class="relatorio-badge-stars">${scoreStars}</span>
+            <span class="relatorio-badge-label">${x.label}</span>
+          </span>
+        </div>
+
+        <div class="border-top my-3"></div>
+
+        <div class="row g-2 relatorio-bs-metrics">
+          <div class="col-6 col-xl-3"><div class="relatorio-bs-stat h-100 border rounded-3 p-2"><small class="text-body-secondary d-block"><i class="bi bi-receipt me-1"></i>VALES</small><strong class="d-block mt-1">${x.qtd}</strong></div></div>
+          <div class="col-6 col-xl-3"><div class="relatorio-bs-stat h-100 border rounded-3 p-2"><small class="text-body-secondary d-block"><i class="bi bi-wallet2 me-1"></i>EM ABERTO</small><strong class="d-block mt-1">${v35SafeMoney(x.abertoValor)}</strong></div></div>
+          <div class="col-6 col-xl-3"><div class="relatorio-bs-stat h-100 border rounded-3 p-2"><small class="text-body-secondary d-block"><i class="bi bi-exclamation-triangle me-1"></i>ATRASOS</small><strong class="d-block mt-1">${x.totalAtrasos}</strong></div></div>
+          <div class="col-6 col-xl-3"><div class="relatorio-bs-stat h-100 border rounded-3 p-2"><small class="text-body-secondary d-block"><i class="bi bi-speedometer2 me-1"></i>SCORE</small><strong class="d-block mt-1">${x.score}/100</strong></div></div>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 relatorio-bs-footer">
+          <span class="text-body-secondary small"><i class="bi bi-calendar-check me-1"></i>Último vale: ${x.ultimoVale ? v35DateBr(x.ultimoVale) : '-'}</span>
+          <button type="button" class="btn btn-primary btn-sm" onclick="openClientReport('${v35Escape(x.key)}')"><i class="bi bi-clock-history me-1"></i>VER HISTÓRICO</button>
+        </div>
+      </div>
     </article>`;
   }).join('') : '<div class="empty-state">Nenhum cliente encontrado.</div>';
 }
@@ -3785,12 +4050,48 @@ function openClientReport(key){
     const cls = pago ? 'pago' : (venc && venc < today ? 'atrasado' : 'aberto');
     const saldo = pago ? 0 : v35LoanBalance(v);
     const obs = String(v.observacao || '').split(/\n+/).map(l=>l.trim()).filter(Boolean).slice(-4).map(l=>`<li>${v35Escape(l)}</li>`).join('') || '<li>SEM OBSERVAÇÃO.</li>';
-    return `<article class="v35-history-row ${cls}"><div><h4>Vale Nº ${String(v.numero||'').padStart(4,'0')}</h4><span>${cls.toUpperCase()}</span></div><p>VALLE: <b>${v35SafeMoney(v35LoanPrincipal(v))}</b> • Total: <b>${v35SafeMoney(v35LoanTotal(v))}</b> • Saldo: <b>${v35SafeMoney(saldo)}</b></p><p>Início: ${v35DateBr(v.dataInicial)} • Vencimento: ${v35DateBr(v.dataFinal)} • Juros: ${String(v.juros||0).replace('.', ',')}%</p><ul>${obs}</ul><footer class="v35-modal-history-actions"><button class="whats" onclick="closeClientReport();openWhatsLoan('${v.id}')">WHATSAPP</button><button class="pdf" onclick="closeClientReport();openPdfPreviewById('${v.id}')">PDF</button><button class="receber" onclick="closeClientReport();openReceiveModal('${v.id}')">RECEBER</button></footer></article>`;
+    const statusTone = pago ? 'success' : (cls === 'atrasado' ? 'danger' : 'warning');
+    const statusIcon = pago ? 'bi-check-circle-fill' : (cls === 'atrasado' ? 'bi-exclamation-triangle-fill' : 'bi-clock-fill');
+    const principal = v35LoanPrincipal(v);
+    const total = v35LoanTotal(v);
+    const lucro = Math.max(0, total - principal);
+    return `<article class="card v35-history-row ${cls} border-${statusTone} border-start border-4 shadow-sm">
+      <div class="card-body">
+        <header class="v35-vale-header">
+          <h4><i class="bi bi-receipt me-2"></i>Vale Nº ${String(v.numero||'').padStart(4,'0')}</h4>
+          <span class="badge text-bg-${statusTone} rounded-pill v35-vale-status"><i class="bi ${statusIcon} me-1"></i>${cls.toUpperCase()}</span>
+        </header>
+        <div class="v35-modal-loan-metrics">
+          <div class="v35-modal-stat"><small>VALOR EMPRESTADO</small><strong>${v35SafeMoney(principal)}</strong></div>
+          <div class="v35-modal-stat"><small>VALOR A RECEBER</small><strong>${v35SafeMoney(total)}</strong></div>
+          <div class="v35-modal-stat"><small>LUCRO</small><strong>${v35SafeMoney(lucro)}</strong></div>
+        </div>
+        <div class="v35-modal-date-grid">
+          <div class="v35-modal-date-card"><small><i class="bi bi-calendar-event me-1"></i>DATA INICIAL</small><strong>${v35DateBr(v.dataInicial)}</strong></div>
+          <div class="v35-modal-date-card"><small><i class="bi bi-calendar-check me-1"></i>DATA FINAL</small><strong>${v35DateBr(v.dataFinal)}</strong></div>
+        </div>
+        <div class="v35-modal-notes-wrap"><small><i class="bi bi-chat-left-text me-1"></i>OBSERVAÇÃO</small><ul class="v35-modal-notes">${obs}</ul></div>
+        <footer class="v35-modal-history-actions"><button class="btn btn-success btn-sm" onclick="closeClientReport();openWhatsLoan('${v.id}')"><i class="bi bi-whatsapp me-1"></i>WHATSAPP</button><button class="btn btn-danger btn-sm" onclick="closeClientReport();openPdfPreviewById('${v.id}')"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button><button class="btn btn-primary btn-sm" onclick="closeClientReport();openReceiveModal('${v.id}')"><i class="bi bi-cash-coin me-1"></i>RECEBER</button></footer>
+      </div>
+    </article>`;
   }).join('') || '<div class="empty-state">Cliente ainda não possui vales.</div>';
-  modal.innerHTML = `<div class="client-report-card v35-client-report-card"><button class="client-report-close" onclick="closeClientReport()">×</button><div class="v35-report-head"><div><h2>${v35Escape(x.nome)}</h2><p>${v35Escape(x.telefone || 'SEM TELEFONE')} ${x.cpf ? '• CPF '+v35Escape(x.cpf) : ''}</p></div><span class="v35-score-badge ${x.classe}">${x.stars}<b>${x.label}</b></span></div><div class="v35-report-summary"><div><span>Score</span><strong>${x.score}/100</strong></div><div><span>Vales</span><strong>${x.qtd}</strong></div><div><span>Pagos</span><strong>${x.pagos}</strong></div><div><span>Em aberto</span><strong>${x.abertos}</strong></div><div><span>Atrasos</span><strong>${x.totalAtrasos}</strong></div><div><span>Maior atraso</span><strong>${x.maiorAtraso} dias</strong></div><div><span>VALLE</span><strong>${v35SafeMoney(x.totalEmprestado)}</strong></div><div><span>Juros pagos</span><strong>${v35SafeMoney(x.jurosRecebidos)}</strong></div></div><div class="v35-report-dates"><span>Primeiro VALLE: <b>${x.primeiroVale ? v35DateBr(x.primeiroVale) : '-'}</b></span><span>Último pagamento: <b>${x.ultimoPagamento ? v35DateBr(x.ultimoPagamento) : '-'}</b></span></div><h3>Histórico completo</h3><div class="v35-history-list">${rows}</div></div>`;
+  const modalTone = x.classe === 'excelente' ? 'success' : (x.classe === 'bom' ? 'primary' : (x.classe === 'regular' ? 'warning' : 'danger'));
+  const modalStars = Array.from({length:5}, (_,i) => `<i class="bi ${i < Math.max(0, Math.min(5, (String(x.stars||'').match(/★/g)||[]).length)) ? 'bi-star-fill' : 'bi-star'}"></i>`).join('');
+  modal.innerHTML = `<div class="client-report-card v35-client-report-card" style="--v35-score-color:var(--bs-${modalTone})">
+    <button class="client-report-close btn btn-outline-primary" onclick="closeClientReport()" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
+    <div class="v35-report-head">
+      <div class="v35-report-person"><div class="v35-report-avatar">${v35Escape((x.nome||'C').trim().split(/\s+/).slice(0,2).map(n=>n[0]||'').join('').toUpperCase())}</div><div class="min-w-0"><h2>${v35Escape(x.nome)}</h2><p><span><i class="bi bi-telephone me-1"></i>${v35Escape(x.telefone || 'SEM TELEFONE')}</span>${x.cpf ? `<span><i class="bi bi-person-vcard me-1"></i>CPF: ${v35Escape(x.cpf)}</span>` : ''}</p></div></div>
+      <span class="v35-score-badge text-bg-${modalTone}"><span class="v35-modal-stars">${modalStars}</span><b>${x.label}</b></span>
+    </div>
+    <div class="border-top my-3"></div>
+    <div class="v35-report-summary"><div><span><i class="bi bi-speedometer2 me-1"></i>Score</span><strong>${x.score}/100</strong></div><div><span><i class="bi bi-receipt me-1"></i>Vales</span><strong>${x.qtd}</strong></div><div><span><i class="bi bi-check-circle me-1"></i>Pagos</span><strong>${x.pagos}</strong></div><div><span><i class="bi bi-wallet2 me-1"></i>Em aberto</span><strong>${x.abertos}</strong></div><div><span><i class="bi bi-exclamation-triangle me-1"></i>Atrasos</span><strong>${x.totalAtrasos}</strong></div><div><span><i class="bi bi-hourglass-split me-1"></i>Maior atraso</span><strong>${x.maiorAtraso} dias</strong></div><div><span><i class="bi bi-cash-stack me-1"></i>VALLE</span><strong>${v35SafeMoney(x.totalEmprestado)}</strong></div><div><span><i class="bi bi-coin me-1"></i>Juros pagos</span><strong>${v35SafeMoney(x.jurosRecebidos)}</strong></div></div>
+    <div class="v35-report-dates"><span><i class="bi bi-calendar-event me-1"></i>Primeiro VALLE: <b>${x.primeiroVale ? v35DateBr(x.primeiroVale) : '-'}</b></span><span><i class="bi bi-calendar-check me-1"></i>Último pagamento: <b>${x.ultimoPagamento ? v35DateBr(x.ultimoPagamento) : '-'}</b></span></div>
+    <h3 class="v35-modal-section-title"><i class="bi bi-clock-history me-2"></i>Histórico completo</h3><div class="v35-history-list">${rows}</div>
+  </div>`;
   modal.classList.add('show');
+  document.body.classList.add('v35-history-modal-open');
 }
-function closeClientReport(){ const m=$('clientReportModal'); if(m) m.classList.remove('show'); }
+function closeClientReport(){ const m=$('clientReportModal'); if(m) m.classList.remove('show'); document.body.classList.remove('v35-history-modal-open'); }
 function v35ExportReportCsv(){
   const rows = [['Cliente','Telefone','CPF','Classificacao','Score','Vales','Pagos','Em aberto','Atrasos','Maior atraso','Total em VALLES','Saldo aberto','Juros recebidos']];
   v35ClienteStats().forEach(x=>rows.push([x.nome,x.telefone,x.cpf,x.label,x.score,x.qtd,x.pagos,x.abertos,x.totalAtrasos,x.maiorAtraso,x.totalEmprestado,x.abertoValor,x.jurosRecebidos]));

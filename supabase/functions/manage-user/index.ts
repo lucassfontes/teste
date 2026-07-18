@@ -59,6 +59,11 @@ Deno.serve(async(req)=>{
    } else if(body.name!==undefined){changes.name=body.name}
    const {error}=await admin.from('profiles').update(changes).eq('id',target.id);if(error)return json({error:error.message},400)
    if(caller.role==='session'&&body.name)await admin.auth.admin.updateUserById(target.id,{user_metadata:{name:body.name}})
+   if(caller.role==='session'&&body.interestPercent!==undefined){
+    const interest=Math.max(0,Number(body.interestPercent)||0)
+    const {error:permissionError}=await admin.from('service_permissions').update({interest_percent:interest,updated_at:new Date().toISOString()}).eq('service_user_id',target.id).eq('session_user_id',caller.id)
+    if(permissionError)return json({error:permissionError.message},400)
+   }
    return json({ok:true,userId:target.id})
   }
   return json({error:'Ação inválida.'},400)

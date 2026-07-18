@@ -1,0 +1,16 @@
+AUDITORIA DETALHADA - SUPABASE
+
+1. Abra o Supabase > SQL Editor.
+2. Execute o arquivo supabase/AUDITORIA_DETALHADA_SETUP.sql.
+3. Publique novamente os arquivos do projeto.
+4. Limpe o cache do navegador/PWA ou reinstale o aplicativo para carregar a nova versão.
+
+O painel do USUÁRIO DE SESSÃO passa a mostrar:
+- criação, atualização e exclusão de clientes e vales;
+- quais campos foram modificados, com valor anterior e novo;
+- pagamentos parciais, pagamentos de juros e quitações;
+- usuário responsável, data, hora e assinatura eletrônica;
+- busca, filtros por usuário/módulo/ação/data;
+- ordem decrescente por data;
+- paginação por "Carregar mais";
+- logs sem opção de edição ou exclusão.

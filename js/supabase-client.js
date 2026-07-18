@@ -203,7 +203,10 @@
     let completeData = data && typeof data === 'object' ? clone(data) : {};
     try {
       if (completeData.settings) {
+        // Configurações financeiras são individuais de cada usuário de serviço
+        // e ficam em service_permissions, não no workspace compartilhado.
         delete completeData.settings.percentualJuros50;
+        delete completeData.settings.percentualJuros;
         delete completeData.settings.taxaAtrasoDiario;
         delete completeData.settings.tipoTaxaAtrasoDiario;
       }
@@ -314,6 +317,39 @@
     return data;
   }
 
+
+  function auditCacheKey(id){ return `audit_logs_${id}`; }
+  function auditHash(input){
+    let h=2166136261; const str=JSON.stringify(input||{});
+    for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}
+    return `VALLE-${Date.now().toString(36).toUpperCase()}-${(h>>>0).toString(16).padStart(8,'0').toUpperCase()}`;
+  }
+  async function recordAudit(action, entityType, entityId, details={}){
+    if (!profile || !['session','service'].includes(profile.role)) return false;
+    const sid=currentSessionId(); const now=new Date().toISOString();
+    const d=clone(details||{}); const signature=auditHash({sid,uid:profile.id,action,entityType,entityId,d,now});
+    const item={
+      session_user_id:sid, actor_user_id:profile.id, actor_name:profile.name||profile.email||'Usuário',
+      actor_role:profile.role, action:String(action||'').toUpperCase(), module:String(d.module||entityType||'SISTEMA').toUpperCase(),
+      title:String(d.title||'Ação registrada'), description:String(d.description||''),
+      entity_type:String(entityType||'registro'), entity_id:String(entityId||''), client_name:d.client_name||d.nome||null,
+      vale_number:d.vale_number||d.numero||null, old_data:d.old_data||null, new_data:d.new_data||null,
+      changes:d.changes||{}, details:d, signature, created_at:now
+    };
+    const cached=safeGet(auditCacheKey(sid),[]); cached.unshift(item); safeSet(auditCacheKey(sid),cached.slice(0,2000));
+    if(!isOnline()) return true;
+    try{ const {error}=await getClient().from('audit_logs').insert(item); if(error) throw error; return true; }
+    catch(e){ console.warn('Log guardado localmente:',e); return true; }
+  }
+
+  async function listAuditLogs(limit=1000){
+    if(!profile || profile.role!=='session') return [];
+    const sid=currentSessionId();
+    if(!isOnline()) return safeGet(auditCacheKey(sid),[]).slice(0,limit);
+    const {data,error}=await getClient().from('audit_logs').select('*').eq('session_user_id',sid).order('created_at',{ascending:false}).limit(limit);
+    if(error) throw error; safeSet(auditCacheKey(sid),data||[]); return data||[];
+  }
+
   async function listManagedUsers(){
     if (!profile) return [];
     if (!isOnline()) return safeGet(`managed_users_${profile.id}`, []);
@@ -355,7 +391,7 @@
     configured, getClient, signIn, signOut, restoreSession, loadProfile,
     get profile(){return profile}, get sessionProfile(){return sessionProfile},
     accessState, setMyTheme, loadWorkspace, loadWorkspaceSnapshot, saveWorkspace, queueWorkspace, flushWorkspace,
-    syncPendingWorkspace, invokeManage, listManagedUsers, getPermissions, savePermissions, loadMyPermissions,
+    syncPendingWorkspace, invokeManage, listManagedUsers, getPermissions, savePermissions, loadMyPermissions, recordAudit, listAuditLogs,
     normalizePhone, isOnline,
     get syncState(){return syncState},
     get lastSyncError(){return lastSyncError},

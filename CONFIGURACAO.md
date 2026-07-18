@@ -1,0 +1,1 @@
+Edite js/config.js

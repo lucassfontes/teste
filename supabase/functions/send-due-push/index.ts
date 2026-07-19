@@ -1,3 +1,5 @@
+let site = '/teste'
+
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import webpush from 'npm:web-push@3.6.7'
 
@@ -18,13 +20,24 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false }
 })
 
-function isoToday(timeZone = 'Europe/Brussels') {
+function isoToday(timeZone = 'America/Sao_Paulo') {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
   }).format(new Date())
+}
+
+function dateDiffDays(fromIso: string, toIso: string) {
+  const [fy, fm, fd] = fromIso.split('-').map(Number)
+  const [ty, tm, td] = toIso.split('-').map(Number)
+  if (![fy, fm, fd, ty, tm, td].every(Number.isFinite)) return Number.NaN
+  return Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / 86400000)
+}
+
+function formatDateBR(isoDate: string) {
+  return isoDate.split('-').reverse().join('/')
 }
 
 function money(value: unknown) {
@@ -47,6 +60,41 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   })
 }
 
+async function registerDelivery(
+  subscriptionId: string,
+  itemId: string,
+  dueDate: string,
+  notificationDate: string,
+  kind: string
+) {
+  const { error } = await supabase.from('push_delivery_log').insert({
+    subscription_id: subscriptionId,
+    vale_id: itemId,
+    due_date: dueDate,
+    notification_date: notificationDate,
+    kind
+  })
+
+  return error
+}
+
+async function removeDelivery(
+  subscriptionId: string,
+  itemId: string,
+  dueDate: string,
+  notificationDate: string,
+  kind: string
+) {
+  await supabase
+    .from('push_delivery_log')
+    .delete()
+    .eq('subscription_id', subscriptionId)
+    .eq('vale_id', itemId)
+    .eq('due_date', dueDate)
+    .eq('notification_date', notificationDate)
+    .eq('kind', kind)
+}
+
 Deno.serve(async (req) => {
   if (CRON_SECRET && req.headers.get('x-cron-secret') !== CRON_SECRET) {
     return jsonResponse({ error: 'unauthorized' }, 401)
@@ -55,18 +103,20 @@ Deno.serve(async (req) => {
   try {
     const today = isoToday()
 
-    // Cada workspace representa uma sessão. Os vales pertencem à sessão,
-    // não a um usuário de serviço individual.
     const { data: workspaces, error: workspaceError } = await supabase
       .from('session_workspaces')
       .select('session_user_id,data')
 
     if (workspaceError) throw workspaceError
 
+    let sessionsProcessed = 0
     let sessionsWithDueVales = 0
     let dueVales = 0
+    let sessionsNearExpiration = 0
     let recipientDevices = 0
     let sent = 0
+    let valeNotificationsSent = 0
+    let sessionExpirationNotificationsSent = 0
     let skipped = 0
     let removed = 0
     let errors = 0
@@ -75,22 +125,23 @@ Deno.serve(async (req) => {
       const sessionUserId = String(workspace.session_user_id || '')
       if (!sessionUserId) continue
 
-      const vales = Array.isArray(workspace.data?.vales) ? workspace.data.vales : []
+      sessionsProcessed++
 
-      // Somente vales não pagos que vencem exatamente hoje.
-      const dueToday = vales.filter((vale: any) => {
-        const status = String(vale.status || '').trim().toUpperCase()
-        const dueDate = String(vale.dataFinal || '').slice(0, 10)
-        return status !== 'PAGO' && dueDate === today
-      })
+      // Busca o usuário de sessão para verificar a validade da assinatura/acesso.
+      const { data: sessionProfile, error: sessionProfileError } = await supabase
+        .from('profiles')
+        .select('id,name,active,valid_until')
+        .eq('id', sessionUserId)
+        .eq('role', 'session')
+        .maybeSingle()
 
-      if (!dueToday.length) continue
+      if (sessionProfileError) {
+        console.error(`Erro ao buscar usuário de sessão ${sessionUserId}:`, sessionProfileError)
+        errors++
+        continue
+      }
 
-      sessionsWithDueVales++
-      dueVales += dueToday.length
-
-      // Busca somente os usuários de SERVIÇO pertencentes a esta sessão.
-      // O usuário de sessão é administrador e não recebe notificações dos vales.
+      // Somente usuários de serviço ATIVOS da sessão recebem notificações.
       const { data: serviceUsers, error: serviceUsersError } = await supabase
         .from('profiles')
         .select('id')
@@ -107,8 +158,6 @@ Deno.serve(async (req) => {
       const serviceUserIds = (serviceUsers || []).map((user: any) => user.id)
       if (!serviceUserIds.length) continue
 
-      // Busca todos os aparelhos ativados desses usuários de serviço.
-      // Inscrições do usuário de sessão são ignoradas, inclusive inscrições antigas.
       const { data: subscriptions, error: subscriptionError } = await supabase
         .from('push_subscriptions')
         .select('id,user_id,session_user_id,endpoint,p256dh,auth')
@@ -117,53 +166,151 @@ Deno.serve(async (req) => {
         .in('user_id', serviceUserIds)
 
       if (subscriptionError) {
-        console.error(`Erro ao buscar inscrições dos usuários de serviço da sessão ${sessionUserId}:`, subscriptionError)
+        console.error(`Erro ao buscar inscrições da sessão ${sessionUserId}:`, subscriptionError)
         errors++
         continue
       }
 
-      recipientDevices += subscriptions?.length || 0
+      const recipientSubscriptions = subscriptions || []
+      recipientDevices += recipientSubscriptions.length
+      if (!recipientSubscriptions.length) continue
 
-      for (const subscription of subscriptions || []) {
+      // ------------------------------------------------------------
+      // 1) VALES: somente os que vencem exatamente hoje.
+      // ------------------------------------------------------------
+      const vales = Array.isArray(workspace.data?.vales) ? workspace.data.vales : []
+      const dueToday = vales.filter((vale: any) => {
+        const status = String(vale.status || '').trim().toUpperCase()
+        const dueDate = String(vale.dataFinal || '').slice(0, 10)
+        return status !== 'PAGO' && dueDate === today
+      })
+
+      if (dueToday.length) {
+        sessionsWithDueVales++
+        dueVales += dueToday.length
+      }
+
+      for (const subscription of recipientSubscriptions) {
         for (const vale of dueToday) {
           const valeId = String(
             vale.id ?? vale.numero ?? `${vale.cliente || 'cliente'}-${vale.dataFinal}`
           )
           const dueDate = String(vale.dataFinal).slice(0, 10)
+          const kind = 'DUE_TODAY'
 
-          const { error: logError } = await supabase
-            .from('push_delivery_log')
-            .insert({
-              subscription_id: subscription.id,
-              vale_id: valeId,
-              due_date: dueDate,
-              notification_date: today,
-              kind: 'DUE_TODAY'
-            })
+          const logError = await registerDelivery(
+            subscription.id,
+            valeId,
+            dueDate,
+            today,
+            kind
+          )
 
           if (logError) {
-            // 23505 = notificação já enviada para este aparelho hoje.
-            if (logError.code === '23505') {
-              skipped++
-            } else {
-              console.error('Erro ao registrar entrega:', logError)
+            if (logError.code === '23505') skipped++
+            else {
+              console.error('Erro ao registrar aviso do vale:', logError)
               errors++
             }
             continue
           }
 
           const payload = JSON.stringify({
-            title: 'VALLE — vence hoje',
+            title: 'Vence hoje',
             body:
               `${vale.cliente || 'Cliente'} • ` +
               `${money(balance(vale))} • ` +
-              `vencimento ${dueDate.split('-').reverse().join('/')}`,
+              `vencimento ${formatDateBR(dueDate)}`,
             tag: `vale-${sessionUserId}-${valeId}-${dueDate}`,
-            url: `./index.html?screen=notificacoes&vale=${encodeURIComponent(valeId)}#notificacoes`,
+            url: `.site/index.html?screen=notificacoes&vale=${encodeURIComponent(valeId)}#notificacoes`,
+            data: { type: 'DUE_TODAY', valeId, dueDate, sessionUserId }
+          })
+
+          try {
+            await webpush.sendNotification(
+              {
+                endpoint: subscription.endpoint,
+                keys: { p256dh: subscription.p256dh, auth: subscription.auth }
+              },
+              payload,
+              { TTL: 86400, urgency: 'high' }
+            )
+            sent++
+            valeNotificationsSent++
+          } catch (error: any) {
+            console.error('Erro ao enviar aviso do vale:', error)
+            errors++
+
+            if (error?.statusCode === 404 || error?.statusCode === 410) {
+              await supabase
+                .from('push_subscriptions')
+                .update({ enabled: false, updated_at: new Date().toISOString() })
+                .eq('id', subscription.id)
+              removed++
+            } else {
+              await removeDelivery(subscription.id, valeId, dueDate, today, kind)
+            }
+          }
+        }
+      }
+
+      // ------------------------------------------------------------
+      // 2) VALIDADE DA SESSÃO: avisa diariamente de 7 dias até o dia.
+      // O próprio usuário de sessão NÃO recebe; somente seus serviços.
+      // ------------------------------------------------------------
+      const validUntil = String(sessionProfile?.valid_until || '').slice(0, 10)
+      const daysRemaining = validUntil ? dateDiffDays(today, validUntil) : Number.NaN
+      const shouldNotifyExpiration =
+        Boolean(sessionProfile?.active) &&
+        Boolean(validUntil) &&
+        Number.isFinite(daysRemaining) &&
+        daysRemaining >= 0 &&
+        daysRemaining <= 7
+
+      if (shouldNotifyExpiration) {
+        sessionsNearExpiration++
+        const itemId = `SESSION_EXPIRY:${sessionUserId}`
+        const kind = 'SESSION_EXPIRY'
+        const sessionName = String(sessionProfile?.name || 'Sessão')
+
+        let title = 'VALLE'
+        let body = `A sessão ${sessionName} vence em ${daysRemaining} dias, em ${formatDateBR(validUntil)}.`
+
+        if (daysRemaining === 1) {
+          body = `A sessão ${sessionName} vence amanhã, em ${formatDateBR(validUntil)}.`
+        } else if (daysRemaining === 0) {
+          title = 'VALLE — sessão vence hoje'
+          body = `A sessão ${sessionName} vence hoje, ${formatDateBR(validUntil)}.`
+        }
+
+        for (const subscription of recipientSubscriptions) {
+          const logError = await registerDelivery(
+            subscription.id,
+            itemId,
+            validUntil,
+            today,
+            kind
+          )
+
+          if (logError) {
+            if (logError.code === '23505') skipped++
+            else {
+              console.error('Erro ao registrar aviso da validade:', logError)
+              errors++
+            }
+            continue
+          }
+
+          const payload = JSON.stringify({
+            title,
+            body,
+            tag: `session-expiry-${sessionUserId}-${validUntil}-${today}`,
+            url: '.site/index.html?screen=dashboard#dashboard',
             data: {
-              valeId,
-              dueDate,
-              sessionUserId
+              type: 'SESSION_EXPIRY',
+              sessionUserId,
+              validUntil,
+              daysRemaining
             }
           })
 
@@ -171,43 +318,25 @@ Deno.serve(async (req) => {
             await webpush.sendNotification(
               {
                 endpoint: subscription.endpoint,
-                keys: {
-                  p256dh: subscription.p256dh,
-                  auth: subscription.auth
-                }
+                keys: { p256dh: subscription.p256dh, auth: subscription.auth }
               },
               payload,
-              {
-                TTL: 86400,
-                urgency: 'high'
-              }
+              { TTL: 86400, urgency: 'high' }
             )
-
             sent++
+            sessionExpirationNotificationsSent++
           } catch (error: any) {
-            console.error('Erro ao enviar notificação:', error)
+            console.error('Erro ao enviar aviso da validade da sessão:', error)
             errors++
 
             if (error?.statusCode === 404 || error?.statusCode === 410) {
               await supabase
                 .from('push_subscriptions')
-                .update({
-                  enabled: false,
-                  updated_at: new Date().toISOString()
-                })
+                .update({ enabled: false, updated_at: new Date().toISOString() })
                 .eq('id', subscription.id)
-
               removed++
             } else {
-              // O envio falhou. Remove o log para permitir nova tentativa.
-              await supabase
-                .from('push_delivery_log')
-                .delete()
-                .eq('subscription_id', subscription.id)
-                .eq('vale_id', valeId)
-                .eq('due_date', dueDate)
-                .eq('notification_date', today)
-                .eq('kind', 'DUE_TODAY')
+              await removeDelivery(subscription.id, itemId, validUntil, today, kind)
             }
           }
         }
@@ -217,9 +346,14 @@ Deno.serve(async (req) => {
     return jsonResponse({
       ok: true,
       date: today,
+      timeZone: 'America/Sao_Paulo',
+      sessionsProcessed,
       sessionsWithDueVales,
       dueVales,
+      sessionsNearExpiration,
       recipientDevices,
+      valeNotificationsSent,
+      sessionExpirationNotificationsSent,
       sent,
       skipped,
       removed,
@@ -228,10 +362,7 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error('Erro geral da função:', error)
     return jsonResponse(
-      {
-        ok: false,
-        error: error?.message || 'Erro interno ao enviar notificações'
-      },
+      { ok: false, error: error?.message || 'Erro interno ao enviar notificações' },
       500
     )
   }

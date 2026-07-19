@@ -35,10 +35,24 @@
     const client = cloud.getClient();
     if (!client) throw new Error('Supabase não configurado.');
 
+    // Somente usuários de serviço recebem notificações de vencimento.
+    // O usuário de sessão administra a equipe, mas não recebe os avisos dos vales.
+    if (cloud.profile.role !== 'service') {
+      throw new Error('As notificações de vales estão disponíveis somente para usuários de serviço.');
+    }
+
+    const sessionUserId = cloud.profile.session_user_id;
+
+    if (!sessionUserId) {
+      throw new Error('Este usuário de serviço não está vinculado a uma sessão válida.');
+    }
+
     const json = subscription.toJSON();
     const payload = {
       user_id: cloud.profile.id,
-      session_user_id: cloud.profile.role === 'session' ? cloud.profile.id : cloud.profile.session_user_id,
+      // Usuários de sessão e todos os usuários de serviço subordinados
+      // compartilham o mesmo session_user_id para receber os mesmos avisos.
+      session_user_id: sessionUserId,
       endpoint: json.endpoint,
       p256dh: json.keys?.p256dh,
       auth: json.keys?.auth,
@@ -120,6 +134,15 @@
       deactivateBtn.disabled = true;
       testBtn.disabled = true;
       setStatus('Este aparelho ou navegador não oferece notificações push. No iPhone, instale o VALLE pela opção “Adicionar à Tela de Início”.', 'warning');
+      return;
+    }
+
+    const profile = window.ValleCloud?.profile;
+    if (profile?.role && profile.role !== 'service') {
+      activateBtn.classList.add('d-none');
+      deactivateBtn.classList.add('d-none');
+      testBtn.disabled = true;
+      setStatus('O usuário de sessão não recebe notificações dos vales. Os avisos são enviados somente aos usuários de serviço desta sessão.', 'secondary');
       return;
     }
 

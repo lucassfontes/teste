@@ -5,7 +5,10 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY')!
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY')!
-const VAPID_SUBJECT = Deno.env.get('VAPID_SUBJECT') || 'mailto:admin@example.com'
+const VAPID_SUBJECT_RAW = Deno.env.get('VAPID_SUBJECT') || 'admin@example.com'
+const VAPID_SUBJECT = VAPID_SUBJECT_RAW.startsWith('mailto:') || VAPID_SUBJECT_RAW.startsWith('https://')
+  ? VAPID_SUBJECT_RAW
+  : `mailto:${VAPID_SUBJECT_RAW}`
 const CRON_SECRET = Deno.env.get('CRON_SECRET') || ''
 
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
@@ -35,7 +38,7 @@ Deno.serve(async (req) => {
   let sent = 0, skipped = 0, removed = 0, errors = 0
   for (const workspace of workspaces || []) {
     const vales = Array.isArray(workspace.data?.vales) ? workspace.data.vales : []
-    const due = vales.filter((v: any) => String(v.status || '').toUpperCase() !== 'PAGO' && String(v.dataFinal || '').slice(0, 10) <= today)
+    const due = vales.filter((v: any) => String(v.status || '').toUpperCase() !== 'PAGO' && String(v.dataFinal || '').slice(0, 10) === today)
     if (!due.length) continue
 
     const { data: subscriptions, error } = await supabase.from('push_subscriptions').select('*').eq('session_user_id', workspace.session_user_id).eq('enabled', true)
@@ -46,16 +49,16 @@ Deno.serve(async (req) => {
         const valeId = String(vale.id ?? vale.numero ?? `${vale.cliente}-${vale.dataFinal}`)
         const dueDate = String(vale.dataFinal).slice(0, 10)
         const { error: logError } = await supabase.from('push_delivery_log').insert({
-          subscription_id: sub.id, vale_id: valeId, due_date: dueDate, notification_date: today, kind: dueDate === today ? 'DUE_TODAY' : 'OVERDUE'
+          subscription_id: sub.id, vale_id: valeId, due_date: dueDate, notification_date: today, kind: 'DUE_TODAY'
         })
         if (logError) { skipped++; continue }
 
-        const title = dueDate === today ? 'VALLE — vence hoje' : 'VALLE — vale vencido'
+        const title = 'VALLE — vence hoje'
         const payload = JSON.stringify({
           title,
           body: `${vale.cliente || 'Cliente'} • ${money(balance(vale))} • vencimento ${dueDate.split('-').reverse().join('/')}`,
           tag: `vale-${valeId}-${dueDate}`,
-          url: './index.html#notificacoes',
+          url: `./index.html?screen=notificacoes&vale=${encodeURIComponent(valeId)}#notificacoes`,
           data: { valeId, dueDate }
         })
         try {

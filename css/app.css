@@ -23407,3 +23407,15 @@ body:not(.dark) .pdf-preview-body.card-body {
     border-radius: 11px !important;
   }
 }
+
+/* Destaque temporário do vale aberto ao tocar em uma notificação push. */
+.notification-bootstrap-item.push-notification-target {
+  animation: vallePushTargetPulse 1s ease-in-out 3;
+  outline: 4px solid rgba(255, 193, 7, .55);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 8px rgba(255, 193, 7, .16), 0 18px 45px rgba(0, 0, 0, .22) !important;
+}
+@keyframes vallePushTargetPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.018); }
+}

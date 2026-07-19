@@ -3212,7 +3212,7 @@ function renderNotificationBootstrapCard(v) {
       ? 'Vencimento hoje'
       : `Vence em ${info.dias} dia${info.dias === 1 ? '' : 's'}`;
 
-  return `<article class="card notification-bootstrap-item border-${statusClass}">
+  return `<article class="card notification-bootstrap-item border-${statusClass}" data-notification-vale-id="${h(String(v.id ?? v.numero ?? ''))}">
     <div class="card-body p-3 p-md-4">
       <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
         <div class="d-flex align-items-start gap-2 min-w-0 notification-client-wrap">
@@ -4399,5 +4399,78 @@ if (document.readyState === 'loading') {
     const tab = event.target.closest('.tab');
     if (!tab || !isMobile()) return;
     document.body.classList.remove('mobile-nav-hidden');
+  });
+})();
+
+
+/* Abre diretamente a cobrança indicada por uma notificação push. */
+(function setupPushNotificationDeepLink() {
+  let handledKey = '';
+
+  function getDeepLink() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      screen: params.get('screen') || (window.location.hash === '#notificacoes' ? 'notificacoes' : ''),
+      valeId: params.get('vale') || ''
+    };
+  }
+
+  function cleanDeepLinkUrl() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('screen');
+    url.searchParams.delete('vale');
+    url.hash = 'notificacoes';
+    history.replaceState({}, '', url.pathname + url.search + url.hash);
+  }
+
+  function openPushTarget(attempt = 0) {
+    const target = getDeepLink();
+    if (target.screen !== 'notificacoes') return;
+
+    const key = `${target.screen}:${target.valeId}`;
+    if (handledKey === key && attempt === 0) return;
+
+    if (typeof window.switchScreen !== 'function' && typeof switchScreen !== 'function') {
+      if (attempt < 20) setTimeout(() => openPushTarget(attempt + 1), 300);
+      return;
+    }
+
+    try {
+      switchScreen('notificacoes');
+      notificationActiveFilter = 'hoje';
+      document.querySelectorAll('.notif-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.notifFilter === 'hoje');
+      });
+      renderNotifications();
+    } catch (_) {
+      if (attempt < 20) setTimeout(() => openPushTarget(attempt + 1), 300);
+      return;
+    }
+
+    if (!target.valeId) {
+      handledKey = key;
+      cleanDeepLinkUrl();
+      return;
+    }
+
+    const selectorId = (window.CSS && CSS.escape) ? CSS.escape(target.valeId) : target.valeId.replace(/["\\]/g, '\\$&');
+    const card = document.querySelector(`[data-notification-vale-id="${selectorId}"]`);
+    if (!card) {
+      if (attempt < 20) setTimeout(() => openPushTarget(attempt + 1), 300);
+      return;
+    }
+
+    handledKey = key;
+    card.classList.add('push-notification-target');
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => card.classList.remove('push-notification-target'), 5000);
+    cleanDeepLinkUrl();
+  }
+
+  window.addEventListener('load', () => setTimeout(() => openPushTarget(), 700));
+  window.addEventListener('hashchange', () => setTimeout(() => openPushTarget(), 100));
+  window.addEventListener('popstate', () => setTimeout(() => openPushTarget(), 100));
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) setTimeout(() => openPushTarget(), 150);
   });
 })();

@@ -139,6 +139,25 @@
     return profile;
   }
 
+  async function verifyCurrentPassword(password){
+    const value = String(password || '');
+    if (!value) throw new Error('Digite a senha para continuar.');
+    if (!isOnline()) throw new Error('A confirmação da senha precisa de internet.');
+    const c = getClient();
+    if (!c) throw new Error('Supabase não configurado.');
+    const currentUser = await getCurrentAuth();
+    if (!currentUser?.email) throw new Error('Não foi possível identificar o usuário conectado.');
+    const currentUserId = currentUser.id;
+    const { data, error } = await c.auth.signInWithPassword({
+      email: currentUser.email,
+      password: value
+    });
+    if (error || !data?.user || data.user.id !== currentUserId) {
+      throw new Error('Senha incorreta.');
+    }
+    return true;
+  }
+
   async function signOut(){
     if (getClient()) await getClient().auth.signOut();
     profile = null; sessionProfile = null;
@@ -388,7 +407,7 @@
 
   installOnlineHandlers();
   window.ValleCloud = {
-    configured, getClient, signIn, signOut, restoreSession, loadProfile,
+    configured, getClient, signIn, signOut, verifyCurrentPassword, restoreSession, loadProfile,
     get profile(){return profile}, get sessionProfile(){return sessionProfile},
     accessState, setMyTheme, loadWorkspace, loadWorkspaceSnapshot, saveWorkspace, queueWorkspace, flushWorkspace,
     syncPendingWorkspace, invokeManage, listManagedUsers, getPermissions, savePermissions, loadMyPermissions, recordAudit, listAuditLogs,

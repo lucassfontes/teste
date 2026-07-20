@@ -23419,3 +23419,172 @@ body:not(.dark) .pdf-preview-body.card-body {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.018); }
 }
+
+/* Confirmação protegida antes de reabrir vale no Histórico */
+#abrirValeSenhaModal {
+  z-index: 20050;
+}
+#abrirValeSenhaModal + .modal-backdrop,
+.modal-backdrop.show {
+  z-index: 20040;
+}
+#abrirValeSenhaModal .modal-content {
+  overflow: hidden;
+  border-radius: 1.15rem;
+}
+#abrirValeSenhaModal .abrir-vale-senha-header {
+  padding: 1.15rem 1.25rem;
+  color: #fff;
+  background: linear-gradient(135deg, #0d6efd, #084298);
+}
+#abrirValeSenhaModal .abrir-vale-senha-icon {
+  width: 2.8rem;
+  height: 2.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: .85rem;
+  font-size: 1.35rem;
+  background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.25);
+}
+#abrirValeSenhaModal .modal-footer .btn {
+  min-height: 46px;
+  font-weight: 700;
+}
+#abrirValeSenhaModal .form-control,
+#abrirValeSenhaModal .input-group-text {
+  min-height: 50px;
+}
+@media (max-width: 575.98px) {
+  #abrirValeSenhaModal .modal-dialog {
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+}
+
+/* Modal de senha — layout compacto e responsivo */
+#abrirValeSenhaModal .abrir-vale-senha-dialog {
+  width: min(92vw, 430px) !important;
+  max-width: 430px !important;
+  margin: 1rem auto !important;
+}
+#abrirValeSenhaModal .modal-content {
+  width: 100% !important;
+  border: 1px solid rgba(148, 163, 184, .24) !important;
+  border-radius: 22px !important;
+  background: var(--bs-body-bg, #fff) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .42) !important;
+}
+#abrirValeSenhaModal .abrir-vale-senha-header {
+  display: grid !important;
+  grid-template-columns: 52px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 14px !important;
+  width: 100% !important;
+  padding: 20px 22px !important;
+  background: linear-gradient(135deg, #0d6efd 0%, #0b4fb3 100%) !important;
+}
+#abrirValeSenhaModal .abrir-vale-senha-icon {
+  width: 52px !important;
+  height: 52px !important;
+  flex: 0 0 52px !important;
+  border-radius: 16px !important;
+  font-size: 1.4rem !important;
+}
+#abrirValeSenhaModal .abrir-vale-senha-titulos {
+  min-width: 0 !important;
+}
+#abrirValeSenhaModal .abrir-vale-senha-titulos h2 {
+  margin: 0 0 4px !important;
+  font-size: 1.25rem !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+  color: #fff !important;
+  white-space: normal !important;
+}
+#abrirValeSenhaModal .abrir-vale-senha-titulos p {
+  margin: 0 !important;
+  color: rgba(255,255,255,.82) !important;
+  font-size: .9rem !important;
+  line-height: 1.35 !important;
+}
+#abrirValeSenhaModal .modal-body {
+  width: 100% !important;
+  padding: 22px !important;
+}
+#abrirValeSenhaModal .form-label {
+  display: block !important;
+  margin-bottom: 8px !important;
+  font-size: .82rem !important;
+  letter-spacing: .04em !important;
+}
+#abrirValeSenhaModal .input-group {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  width: 100% !important;
+}
+#abrirValeSenhaModal .input-group-text {
+  width: 52px !important;
+  min-width: 52px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+  border-radius: 14px 0 0 14px !important;
+}
+#abrirValeSenhaModal #abrirValeSenhaInput {
+  display: block !important;
+  width: 1% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: 1 1 auto !important;
+  padding: .8rem 1rem !important;
+  border-radius: 0 14px 14px 0 !important;
+  font-size: 1rem !important;
+}
+#abrirValeSenhaModal #abrirValeSenhaAjuda {
+  margin-top: 9px !important;
+  font-size: .82rem !important;
+  line-height: 1.4 !important;
+}
+#abrirValeSenhaModal .modal-footer {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px !important;
+  width: 100% !important;
+  padding: 0 22px 22px !important;
+}
+#abrirValeSenhaModal .modal-footer .btn {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  padding: .75rem .7rem !important;
+  border-radius: 14px !important;
+  font-size: .9rem !important;
+  line-height: 1.15 !important;
+  white-space: nowrap !important;
+}
+#abrirValeSenhaModal #confirmarAbrirValeBtn:disabled {
+  opacity: .48 !important;
+  cursor: not-allowed !important;
+}
+@media (max-width: 380px) {
+  #abrirValeSenhaModal .abrir-vale-senha-dialog {
+    width: calc(100vw - 20px) !important;
+    margin: 10px auto !important;
+  }
+  #abrirValeSenhaModal .abrir-vale-senha-header {
+    grid-template-columns: 44px minmax(0, 1fr) !important;
+    gap: 11px !important;
+    padding: 17px !important;
+  }
+  #abrirValeSenhaModal .abrir-vale-senha-icon {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  #abrirValeSenhaModal .abrir-vale-senha-titulos h2 { font-size: 1.08rem !important; }
+  #abrirValeSenhaModal .abrir-vale-senha-titulos p { font-size: .8rem !important; }
+  #abrirValeSenhaModal .modal-body { padding: 18px 17px !important; }
+  #abrirValeSenhaModal .modal-footer { padding: 0 17px 18px !important; gap: 8px !important; }
+  #abrirValeSenhaModal .modal-footer .btn { font-size: .78rem !important; padding-inline: .35rem !important; }
+}

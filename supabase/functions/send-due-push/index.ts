@@ -1,7 +1,7 @@
-let site = '/teste'
-
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import webpush from 'npm:web-push@3.6.7'
+
+const SITE = ('teste')
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -222,7 +222,7 @@ Deno.serve(async (req) => {
               `${money(balance(vale))} • ` +
               `vencimento ${formatDateBR(dueDate)}`,
             tag: `vale-${sessionUserId}-${valeId}-${dueDate}`,
-            url: `.site/index.html?screen=notificacoes&vale=${encodeURIComponent(valeId)}#notificacoes`,
+            url: `./${SITE}/index.html?screen=notificacoes&vale=${encodeURIComponent(valeId)}#notificacoes`,
             data: { type: 'DUE_TODAY', valeId, dueDate, sessionUserId }
           })
 
@@ -305,7 +305,7 @@ Deno.serve(async (req) => {
             title,
             body,
             tag: `session-expiry-${sessionUserId}-${validUntil}-${today}`,
-            url: '.site/index.html?screen=dashboard#dashboard',
+            url: `./${SITE}/index.html?screen=dashboard#dashboard`,
             data: {
               type: 'SESSION_EXPIRY',
               sessionUserId,

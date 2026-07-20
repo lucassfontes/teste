@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20260717-preview-fullscreen-v2">
+  <link rel="stylesheet" href="css/app.css?v=20260720-abrir-vale-senha-v1">
 </head>
 
 <body class="bootstrap-only-ui">
@@ -583,13 +583,47 @@
     <div id="partialPaymentBody" class="partial-payment-card"></div>
   </div>
 
+
+  <div class="modal fade abrir-vale-senha-modal" id="abrirValeSenhaModal" tabindex="-1"
+    aria-labelledby="abrirValeSenhaTitulo" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered abrir-vale-senha-dialog">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header abrir-vale-senha-header border-0">
+          <span class="abrir-vale-senha-icon" aria-hidden="true"><i class="bi bi-shield-lock-fill"></i></span>
+          <div class="abrir-vale-senha-titulos">
+            <h2 class="modal-title" id="abrirValeSenhaTitulo">CONFIRMAR SENHA</h2>
+            <p>Digite a senha do usuário de serviço para reabrir este vale.</p>
+          </div>
+        </div>
+        <div class="modal-body p-4">
+          <label class="form-label fw-semibold" for="abrirValeSenhaInput">SENHA</label>
+          <div class="input-group input-group-lg">
+            <span class="input-group-text"><i class="bi bi-key-fill"></i></span>
+            <input class="form-control" id="abrirValeSenhaInput" type="password" autocomplete="current-password"
+              placeholder="DIGITE SUA SENHA" aria-describedby="abrirValeSenhaAjuda">
+          </div>
+          <div id="abrirValeSenhaAjuda" class="form-text mt-2">A senha é obrigatória para reabrir o vale.</div>
+          <div class="alert alert-danger d-none mt-3 mb-0 py-2" id="abrirValeSenhaErro" role="alert"></div>
+        </div>
+        <div class="modal-footer border-0 px-4 pb-4 pt-0 d-flex gap-2">
+          <button type="button" class="btn btn-outline-secondary flex-fill" id="cancelarAbrirValeBtn">
+            <i class="bi bi-x-circle me-1"></i>CANCELAR
+          </button>
+          <button type="button" class="btn btn-success flex-fill" id="confirmarAbrirValeBtn" disabled>
+            <i class="bi bi-check-circle me-1"></i>CONFIRMAR
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="toastContainer" class="app-alert-container" aria-live="polite" aria-atomic="false"></div>
   <!-- JavaScript principal do sistema. Toda a lógica fica em js/app.js. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="vendor/bootstrap/bootstrap.bundle.min.js"></script>
   <script src="js/supabase-config.js"></script>
-  <script src="js/supabase-client.js?v=20260716-auditoria-v1"></script>
-  <script src="js/app.js?v=20260717-preview-fullscreen-v2"></script>
+  <script src="js/supabase-client.js?v=20260720-abrir-vale-senha-v1"></script>
+  <script src="js/app.js?v=20260720-abrir-vale-senha-v2"></script>
   <script src="js/auth-ui.js?v=20260716-alertas-compactos-v2"></script>
   <script src="js/bootstrap-enhance.js?v=20260712-standard-v4"></script>
   <script src="js/push-notifications.js?v=20260718-push-v1"></script>
@@ -609,7 +643,7 @@
       window.addEventListener('load', async function () {
         try {
           const registro = await navigator.serviceWorker.register(
-            'service-worker.js?v=20260718-push-v1',
+            'service-worker.js?v=20260720-abrir-vale-senha-v1',
             { updateViaCache: 'none' }
           );
 

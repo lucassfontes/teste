@@ -1,7 +1,7 @@
 /* VERSAO DO SISTEMA */
 const versao = document.getElementById("versao_sytem")
 
-versao.innerHTML = 'Versão-3.4.6'
+versao.innerHTML = 'Versão-3.4.7'
 /**
  * ARQUIVO PRINCIPAL DO VALLE
  * ------------------------------------------------
@@ -1188,6 +1188,87 @@ function togglePaid(id) {
  * Botão ABRIR VALE no histórico: reabre somente vales quitados.
  * Se o vale já está aberto, apenas avisa para não confundir com Receber.
  */
+let valeAguardandoSenhaId = null;
+
+function getAbrirValeSenhaModal() {
+  const modalEl = $('abrirValeSenhaModal');
+  if (!modalEl || !window.bootstrap?.Modal) return null;
+  return bootstrap.Modal.getOrCreateInstance(modalEl, {
+    backdrop: 'static',
+    keyboard: false,
+    focus: true
+  });
+}
+
+function limparModalSenhaAbrirVale() {
+  const senha = $('abrirValeSenhaInput');
+  const erro = $('abrirValeSenhaErro');
+  const confirmar = $('confirmarAbrirValeBtn');
+  if (senha) senha.value = '';
+  if (erro) {
+    erro.textContent = '';
+    erro.classList.add('d-none');
+  }
+  if (confirmar) {
+    confirmar.disabled = true;
+    confirmar.innerHTML = '<i class="bi bi-check-circle me-1"></i>CONFIRMAR';
+  }
+}
+
+function abrirModalSenhaVale(id) {
+  valeAguardandoSenhaId = id;
+  limparModalSenhaAbrirVale();
+  const modal = getAbrirValeSenhaModal();
+  if (!modal) {
+    toast('NÃO FOI POSSÍVEL ABRIR A CONFIRMAÇÃO DE SENHA');
+    return;
+  }
+  modal.show();
+  setTimeout(() => $('abrirValeSenhaInput')?.focus(), 180);
+}
+
+async function confirmarSenhaAbrirVale() {
+  const senha = $('abrirValeSenhaInput');
+  const confirmar = $('confirmarAbrirValeBtn');
+  const cancelar = $('cancelarAbrirValeBtn');
+  const erro = $('abrirValeSenhaErro');
+  const valor = String(senha?.value || '');
+  if (!valor || !valeAguardandoSenhaId) return;
+
+  confirmar.disabled = true;
+  cancelar.disabled = true;
+  senha.disabled = true;
+  confirmar.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>CONFIRMANDO';
+  if (erro) {
+    erro.textContent = '';
+    erro.classList.add('d-none');
+  }
+
+  try {
+    if (!window.ValleCloud?.verifyCurrentPassword) throw new Error('Verificação de senha indisponível.');
+    await ValleCloud.verifyCurrentPassword(valor);
+    const id = valeAguardandoSenhaId;
+    valeAguardandoSenhaId = null;
+    getAbrirValeSenhaModal()?.hide();
+    togglePaid(id);
+  } catch (e) {
+    if (erro) {
+      erro.textContent = e?.message || 'Senha incorreta.';
+      erro.classList.remove('d-none');
+    }
+    senha.value = '';
+    senha.focus();
+  } finally {
+    senha.disabled = false;
+    cancelar.disabled = false;
+    confirmar.innerHTML = '<i class="bi bi-check-circle me-1"></i>CONFIRMAR';
+    confirmar.disabled = !String(senha.value || '');
+  }
+}
+
+/**
+ * Exige a senha do usuário conectado antes de reabrir um vale quitado.
+ */
 function abrirValeHistorico(id) {
   const v = db.vales.find(x => x.id === id);
   if (!v) return;
@@ -1195,8 +1276,35 @@ function abrirValeHistorico(id) {
     toast('ESTE VALE JÁ ESTÁ EM ABERTO');
     return;
   }
-  togglePaid(id);
+  abrirModalSenhaVale(id);
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const senha = $('abrirValeSenhaInput');
+  const confirmar = $('confirmarAbrirValeBtn');
+  const cancelar = $('cancelarAbrirValeBtn');
+  const modalEl = $('abrirValeSenhaModal');
+
+  if (senha && confirmar) {
+    senha.addEventListener('input', () => {
+      confirmar.disabled = !String(senha.value || '');
+      const erro = $('abrirValeSenhaErro');
+      if (erro) erro.classList.add('d-none');
+    });
+    senha.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !confirmar.disabled) {
+        e.preventDefault();
+        confirmarSenhaAbrirVale();
+      }
+    });
+  }
+  if (confirmar) confirmar.addEventListener('click', confirmarSenhaAbrirVale);
+  if (cancelar) cancelar.addEventListener('click', () => {
+    valeAguardandoSenhaId = null;
+    getAbrirValeSenhaModal()?.hide();
+  });
+  if (modalEl) modalEl.addEventListener('hidden.bs.modal', limparModalSenhaAbrirVale);
+});
 
 function loanPrincipalBalance(v) {
   return Math.max(0, originalLoanValue(v) - Number(v.principalRecebido || 0));

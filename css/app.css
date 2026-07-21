@@ -24290,3 +24290,24 @@ body:not(.dark) .valle-loading-progress{background:rgba(69,42,126,.14)}
     padding-right: max(8px, env(safe-area-inset-right)) !important;
   }
 }
+
+
+/* VALLE: tela de carregamento cobre também a navegação inferior */
+body.valle-is-loading {
+  overflow: hidden !important;
+  touch-action: none !important;
+}
+body.valle-is-loading .tabs {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+body.valle-is-loading #valleLoadingScreen {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100vh !important;
+  min-height: -webkit-fill-available !important;
+  z-index: 2147483647 !important;
+}

@@ -74,6 +74,8 @@
     html.valle-preload-light #valleLoadingScreen { background: linear-gradient(160deg,#f7f5ff 0%,#ece8ff 55%,#e3ddff 100%); }
     html.valle-preload-dark #valleLoadingScreen .valle-loading-card { color: #fff; }
     html.valle-preload-light #valleLoadingScreen .valle-loading-card { color: #21183d; }
+    /* Durante o carregamento, esconde a barra inferior para o overlay cobrir tudo. */
+    body.valle-is-loading .tabs { visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
   </style>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="favicon.ico" sizes="any">
@@ -82,10 +84,10 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20260721-system-mobile-fullscreen-v2">
+  <link rel="stylesheet" href="css/app.css?v=20260721-loading-cover-bottom-nav-v3">
 </head>
 
-<body class="bootstrap-only-ui">
+<body class="bootstrap-only-ui valle-is-loading">
   <div id="valleLoadingScreen" class="valle-loading-screen" role="status" aria-live="polite" aria-label="Carregando o sistema">
     <div class="valle-loading-card">
       <img src="icons/dashboard-icon.png" alt="" class="valle-loading-logo">
@@ -724,7 +726,10 @@
         const loading = document.getElementById('valleLoadingScreen');
         if (!loading) return;
         loading.classList.add('is-hiding');
-        window.setTimeout(function () { loading.remove(); }, 380);
+        window.setTimeout(function () {
+          loading.remove();
+          document.body.classList.remove('valle-is-loading');
+        }, 380);
       };
       window.addEventListener('valle-app-ready', window.hideValleLoadingScreen, { once: true });
       window.addEventListener('load', function () {

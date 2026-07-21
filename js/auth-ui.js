@@ -84,7 +84,7 @@ function applyUserTheme(theme,profile=null){
  const value=theme==='dark'?'dark':'light';
  window.VALLE_ACTIVE_THEME=value;
  document.body.classList.toggle('dark',value==='dark');
- try{localStorage.setItem(themeStorageKey(profile),value)}catch(_){}
+ try{localStorage.setItem(themeStorageKey(profile),value);localStorage.setItem('valle_theme_active',value)}catch(_){}
  updateThemeButtons(value);
  if(window.applyTheme) window.applyTheme();
  return value;
@@ -586,7 +586,7 @@ async function boot(){
  window.addEventListener('offline',()=>{updateSyncBadge({state:'offline',online:false});connectionToast('Internet desconectada. As alterações serão salvas neste aparelho.','warn')});
  el('loginForm').onsubmit=async e=>{e.preventDefault();setMsg('Entrando...',false);el('authWhatsapp').classList.add('hidden');try{const p=await ValleCloud.signIn(el('loginEmail').value,el('loginPassword').value);setMsg('');await showRole(p)}catch(err){setMsg(err.message);if(err.whatsapp){const a=el('authWhatsapp');a.href=whatsappLink(err.whatsapp);a.classList.remove('hidden')}}};
  el('logoutBtn').onclick=async()=>{await ValleCloud.signOut();location.reload()};el('newManagedUserBtn').onclick=openNew;el('closeUserModal').onclick=closeModal;el('cancelUserModal').onclick=closeModal;el('userForm').onsubmit=saveManaged;
- try{const p=await ValleCloud.restoreSession();if(p?.blocked){setMsg(p.reason);if(p.whatsapp){const a=el('authWhatsapp');a.href=whatsappLink(p.whatsapp);a.classList.remove('hidden')}}else if(p)await showRole(p)}catch(e){setMsg(e.message)}
+ try{const p=await ValleCloud.restoreSession();if(p?.blocked){setMsg(p.reason);if(p.whatsapp){const a=el('authWhatsapp');a.href=whatsappLink(p.whatsapp);a.classList.remove('hidden')}}else if(p)await showRole(p)}catch(e){setMsg(e.message)}finally{window.dispatchEvent(new CustomEvent('valle-app-ready'))}
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

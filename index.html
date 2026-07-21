@@ -9,6 +9,46 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
   <title>VALLE</title>
+  <script>
+    /* Aplica o tema antes da primeira pintura para evitar tela branca no celular. */
+    (function () {
+      var theme = null;
+      try {
+        theme = localStorage.getItem('valle_theme_active') || localStorage.getItem('valle_theme_guest');
+        if (theme !== 'dark' && theme !== 'light') {
+          for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i) || '';
+            if (key.indexOf('valle_theme_user_') === 0) {
+              var saved = localStorage.getItem(key);
+              if (saved === 'dark' || saved === 'light') { theme = saved; break; }
+            }
+          }
+        }
+      } catch (_) {}
+      if (theme !== 'dark' && theme !== 'light') {
+        theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      window.VALLE_PRELOAD_THEME = theme;
+      window.VALLE_ACTIVE_THEME = theme;
+      document.documentElement.classList.add(theme === 'dark' ? 'valle-preload-dark' : 'valle-preload-light');
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+    })();
+  </script>
+  <style>
+    /* Estilo crítico: carregado inline antes dos arquivos externos. */
+    html, body { margin: 0; min-height: 100%; }
+    html.valle-preload-dark, html.valle-preload-dark body { background: #070b18; color-scheme: dark; }
+    html.valle-preload-light, html.valle-preload-light body { background: #f4f2ff; color-scheme: light; }
+    #valleLoadingScreen {
+      position: fixed; inset: 0; z-index: 2147483647; display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; min-height: 100dvh; padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+      box-sizing: border-box;
+    }
+    html.valle-preload-dark #valleLoadingScreen { background: linear-gradient(160deg,#070b18 0%,#11152b 55%,#171238 100%); }
+    html.valle-preload-light #valleLoadingScreen { background: linear-gradient(160deg,#f7f5ff 0%,#ece8ff 55%,#e3ddff 100%); }
+    html.valle-preload-dark #valleLoadingScreen .valle-loading-card { color: #fff; }
+    html.valle-preload-light #valleLoadingScreen .valle-loading-card { color: #21183d; }
+  </style>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
@@ -16,10 +56,19 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20260721-avisos-historico-v4">
+  <link rel="stylesheet" href="css/app.css?v=20260721-no-white-flash-v2">
 </head>
 
 <body class="bootstrap-only-ui">
+  <div id="valleLoadingScreen" class="valle-loading-screen" role="status" aria-live="polite" aria-label="Carregando o sistema">
+    <div class="valle-loading-card">
+      <img src="icons/dashboard-icon.png" alt="" class="valle-loading-logo">
+      <h2>VALLE</h2>
+      <p>Carregando seus dados...</p>
+      <div class="valle-loading-progress" aria-hidden="true"><span></span></div>
+    </div>
+  </div>
+
   <div class="app">
     <!-- Cabeçalho principal: título do sistema. A badge de prazo fica somente na aba Novo. -->
     <header class="topbar glass">
@@ -589,9 +638,8 @@
           <p class="avisos-celular-description">Ative, desative ou teste os avisos deste aparelho.</p>
           <div id="pushNotificationStatus" class="alert alert-secondary py-2 px-3 mb-3">Verificando este aparelho…</div>
           <div class="avisos-celular-actions">
-            <button id="activatePushNotifications" type="button" class="btn btn-success"><i class="bi bi-bell-fill me-1"></i>ATIVAR NOTIFICAÇÕES</button>
-            <button id="deactivatePushNotifications" type="button" class="btn btn-outline-danger d-none"><i class="bi bi-bell-slash me-1"></i>DESATIVAR</button>
-            <button id="testPushNotifications" type="button" class="btn btn-outline-primary"><i class="bi bi-send me-1"></i>TESTAR</button>
+            <button id="activatePushNotifications" type="button" class="btn btn-success" aria-pressed="false"><i class="bi bi-bell-fill me-1"></i><span>ATIVAR NOTIFICAÇÕES</span></button>
+            <button id="testPushNotifications" type="button" class="btn btn-outline-primary" disabled aria-disabled="true"><i class="bi bi-send me-1"></i>TESTAR</button>
           </div>
         </div>
       </div>
@@ -638,9 +686,26 @@
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js?v=20260720-abrir-vale-senha-v1"></script>
   <script src="js/app.js?v=20260720-abrir-vale-senha-v2"></script>
-  <script src="js/auth-ui.js?v=20260721-avisos-historico-v4"></script>
+  <script src="js/auth-ui.js?v=20260721-no-white-flash-v2"></script>
   <script src="js/bootstrap-enhance.js?v=20260712-standard-v4"></script>
-  <script src="js/push-notifications.js?v=20260718-push-v1"></script>
+  <script src="js/push-notifications.js?v=20260721-push-test-state-v2"></script>
+  <script>
+    (function () {
+      let hidden = false;
+      window.hideValleLoadingScreen = function () {
+        if (hidden) return;
+        hidden = true;
+        const loading = document.getElementById('valleLoadingScreen');
+        if (!loading) return;
+        loading.classList.add('is-hiding');
+        window.setTimeout(function () { loading.remove(); }, 380);
+      };
+      window.addEventListener('valle-app-ready', window.hideValleLoadingScreen, { once: true });
+      window.addEventListener('load', function () {
+        window.setTimeout(window.hideValleLoadingScreen, 8000);
+      }, { once: true });
+    })();
+  </script>
   <script>
     (function () {
       if (!('serviceWorker' in navigator)) return;

@@ -125,14 +125,14 @@
 
   async function refresh() {
     const activateBtn = $('activatePushNotifications');
-    const deactivateBtn = $('deactivatePushNotifications');
     const testBtn = $('testPushNotifications');
     if (!activateBtn) return;
 
     if (!supported()) {
       activateBtn.disabled = true;
-      deactivateBtn.disabled = true;
       testBtn.disabled = true;
+      testBtn.setAttribute('aria-disabled', 'true');
+      testBtn.classList.add('is-disabled');
       setStatus('Este aparelho ou navegador não oferece notificações push. No iPhone, instale o VALLE pela opção “Adicionar à Tela de Início”.', 'warning');
       return;
     }
@@ -140,8 +140,9 @@
     const profile = window.ValleCloud?.profile;
     if (profile?.role && profile.role !== 'service') {
       activateBtn.classList.add('d-none');
-      deactivateBtn.classList.add('d-none');
       testBtn.disabled = true;
+      testBtn.setAttribute('aria-disabled', 'true');
+      testBtn.classList.add('is-disabled');
       setStatus('O usuário de sessão não recebe notificações dos vales. Os avisos são enviados somente aos usuários de serviço desta sessão.', 'secondary');
       return;
     }
@@ -149,9 +150,19 @@
     const registration = await getRegistration().catch(() => null);
     const subscription = registration ? await registration.pushManager.getSubscription() : null;
     const active = Notification.permission === 'granted' && !!subscription;
-    activateBtn.classList.toggle('d-none', active);
-    deactivateBtn.classList.toggle('d-none', !active);
+    activateBtn.classList.remove('d-none');
+    activateBtn.disabled = false;
+    activateBtn.classList.toggle('is-active', active);
+    activateBtn.classList.toggle('btn-success', !active);
+    activateBtn.classList.toggle('btn-outline-danger', active);
+    activateBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    activateBtn.dataset.notificationActive = active ? 'true' : 'false';
+    activateBtn.innerHTML = active
+      ? '<i class="bi bi-bell-slash me-1"></i><span>DESATIVAR NOTIFICAÇÕES</span>'
+      : '<i class="bi bi-bell-fill me-1"></i><span>ATIVAR NOTIFICAÇÕES</span>';
     testBtn.disabled = !active;
+    testBtn.setAttribute('aria-disabled', active ? 'false' : 'true');
+    testBtn.classList.toggle('is-disabled', !active);
 
     if (active) setStatus('Notificações ativadas neste aparelho.', 'success');
     else if (Notification.permission === 'denied') setStatus('As notificações estão bloqueadas nas configurações do navegador.', 'danger');
@@ -159,9 +170,27 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    $('activatePushNotifications')?.addEventListener('click', activate);
-    $('deactivatePushNotifications')?.addEventListener('click', deactivate);
+    $('activatePushNotifications')?.addEventListener('click', async function () {
+      const active = this.dataset.notificationActive === 'true';
+      this.disabled = true;
+      try {
+        if (active) await deactivate();
+        else await activate();
+      } finally {
+        if (document.body.contains(this)) this.disabled = false;
+      }
+    });
     $('testPushNotifications')?.addEventListener('click', testNotification);
+    const noticesModal = $('avisosCelularModal');
+    noticesModal?.addEventListener('show.bs.modal', function () {
+      const testBtn = $('testPushNotifications');
+      if (testBtn) {
+        testBtn.disabled = true;
+        testBtn.setAttribute('aria-disabled', 'true');
+        testBtn.classList.add('is-disabled');
+      }
+    });
+    noticesModal?.addEventListener('shown.bs.modal', refresh);
     setTimeout(refresh, 1200);
   });
 

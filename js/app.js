@@ -1,7 +1,7 @@
 /* VERSAO DO SISTEMA */
 const versao = document.getElementById("versao_sytem")
 
-versao.innerHTML = 'Versão-3.4.8'
+versao.innerHTML = 'Versão-3.4.9'
 /**
  * ARQUIVO PRINCIPAL DO VALLE
  * ------------------------------------------------
@@ -526,6 +526,7 @@ function applyTheme() {
   }
   if (theme !== 'dark' && theme !== 'light') theme = db?.settings?.theme === 'dark' ? 'dark' : 'light';
   window.VALLE_ACTIVE_THEME = theme;
+  try { localStorage.setItem('valle_theme_active', theme); } catch (_) {}
   const isDark = theme === 'dark';
   document.body.classList.toggle('dark', isDark);
   document.documentElement.classList.toggle('dark', isDark);

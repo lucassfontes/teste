@@ -23816,8 +23816,6 @@ body.dark .avisos-celular-modal #pushNotificationStatus {
   transform: none !important;
 }
 
-
-
 #dashboardPushNoticesBtn span {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -23969,10 +23967,12 @@ body.dark #dashboardPushNoticesBtn:focus-visible {
   box-shadow: 0 12px 24px rgba(5, 150, 105, .22) !important;
 }
 
-.avisos-celular-actions #deactivatePushNotifications {
-  border-color: rgba(248, 113, 113, .55) !important;
+.avisos-celular-actions #activatePushNotifications.is-active {
+  grid-column: 1 / -1 !important;
+  border: 1px solid rgba(248, 113, 113, .55) !important;
   color: #fca5a5 !important;
   background: rgba(127, 29, 29, .12) !important;
+  box-shadow: none !important;
 }
 
 .avisos-celular-actions #testPushNotifications {
@@ -24021,7 +24021,7 @@ body:not(.dark) .avisos-celular-modal #pushNotificationStatus {
   border-color: #dbe3ef !important;
 }
 
-body:not(.dark) .avisos-celular-actions #deactivatePushNotifications {
+body:not(.dark) .avisos-celular-actions #activatePushNotifications.is-active {
   color: #b91c1c !important;
   background: #fff !important;
   border-color: #fecaca !important;
@@ -24079,7 +24079,6 @@ body:not(.dark) .avisos-celular-actions #testPushNotifications {
   }
 
   .avisos-celular-actions #activatePushNotifications,
-  .avisos-celular-actions #deactivatePushNotifications,
   .avisos-celular-actions #testPushNotifications {
     grid-column: 1 !important;
     width: 100% !important;
@@ -24091,3 +24090,56 @@ body:not(.dark) .avisos-celular-actions #testPushNotifications {
 .user-notices-menu-btn span:first-child{display:inline-flex!important;align-items:center;justify-content:center;width:24px;}
 #dashboardLogoutBtn::after{display:none!important;content:none!important;}
 #dashboardLogoutBtn i:last-child{display:none!important;}
+
+/* Botão único para ativar/desativar notificações */
+.avisos-celular-actions #testPushNotifications {
+  grid-column: 1 / -1 !important;
+}
+
+
+/* Estado do botão Testar: disponível somente com notificações ativas */
+.avisos-celular-actions #testPushNotifications:disabled,
+.avisos-celular-actions #testPushNotifications.is-disabled {
+  opacity: .42 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  filter: grayscale(.35) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.avisos-celular-actions #testPushNotifications:not(:disabled):not(.is-disabled) {
+  opacity: 1 !important;
+  cursor: pointer !important;
+}
+
+
+/* Tela inicial de carregamento */
+.valle-loading-screen{
+  position:fixed;
+  inset:0;
+  z-index:2147483647;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100dvh;
+  padding:calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
+  background:linear-gradient(160deg,#090d1c 0%,#111832 58%,#17113a 100%);
+  opacity:1;
+  visibility:visible;
+  transition:opacity .32s ease,visibility .32s ease;
+}
+.valle-loading-screen.is-hiding{opacity:0;visibility:hidden;pointer-events:none}
+.valle-loading-card{width:min(330px,88vw);text-align:center;color:#fff}
+.valle-loading-logo{width:88px;height:88px;object-fit:contain;filter:drop-shadow(0 14px 30px rgba(130,70,255,.35));animation:valleLoadingPulse 1.55s ease-in-out infinite}
+.valle-loading-card h2{margin:18px 0 4px;font-size:1.65rem;font-weight:900;letter-spacing:.09em}
+.valle-loading-card p{margin:0 0 22px;color:rgba(255,255,255,.72);font-size:.9rem;font-weight:600}
+.valle-loading-progress{height:5px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+.valle-loading-progress span{display:block;width:44%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#7047ff,#b150ff);animation:valleLoadingBar 1.15s ease-in-out infinite}
+@keyframes valleLoadingPulse{0%,100%{transform:scale(.96);opacity:.82}50%{transform:scale(1.04);opacity:1}}
+@keyframes valleLoadingBar{0%{transform:translateX(-115%)}100%{transform:translateX(330%)}}
+@media (prefers-reduced-motion:reduce){.valle-loading-logo,.valle-loading-progress span{animation:none}.valle-loading-progress span{width:100%}}
+body:not(.dark) .valle-loading-screen{background:linear-gradient(160deg,#f7f5ff 0%,#ece8ff 55%,#e3ddff 100%)}
+body:not(.dark) .valle-loading-card{color:#21183d}
+body:not(.dark) .valle-loading-card p{color:#6d6386}
+body:not(.dark) .valle-loading-progress{background:rgba(69,42,126,.14)}

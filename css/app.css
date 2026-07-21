@@ -24186,3 +24186,107 @@ body:not(.dark) .valle-loading-progress{background:rgba(69,42,126,.14)}
     margin: auto !important;
   }
 }
+
+/* =========================================================
+   VALLE — TELA INTEIRA NO CELULAR
+   Corrige margens externas, largura reduzida e altura incompleta.
+   ========================================================= */
+@media (max-width: 980px) {
+  html {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100% !important;
+    min-height: 100svh !important;
+    background-color: var(--bs-body-bg, var(--bg)) !important;
+    overflow-x: clip !important;
+  }
+
+  body.bootstrap-only-ui,
+  body {
+    position: relative !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100vh !important;
+    min-height: 100svh !important;
+    min-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: clip !important;
+  }
+
+  body::before {
+    inset: 0 !important;
+    width: 100% !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+  }
+
+  .app,
+  body.bootstrap-only-ui .app {
+    position: relative !important;
+    width: 100% !important;
+    width: 100dvw !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    min-height: 100vh !important;
+    min-height: 100svh !important;
+    min-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: clip !important;
+  }
+
+  main,
+  body.bootstrap-only-ui main {
+    display: block !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    min-height: 100vh !important;
+    min-height: 100svh !important;
+    min-height: 100dvh !important;
+    margin: 0 !important;
+    padding: max(8px, env(safe-area-inset-top)) 0 calc(112px + env(safe-area-inset-bottom)) !important;
+    overflow-x: clip !important;
+  }
+
+  main > .screen,
+  main > .screen.active,
+  body.bootstrap-only-ui main > .screen {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    min-height: calc(100svh - 120px) !important;
+    margin: 0 !important;
+    padding-left: max(10px, env(safe-area-inset-left)) !important;
+    padding-right: max(10px, env(safe-area-inset-right)) !important;
+  }
+
+  /* Dashboard ocupa a largura total; os próprios componentes controlam o respiro interno. */
+  #dashboard.dashboard-premium,
+  #dashboard.dashboard-pro {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  /* Menu inferior acompanha toda a tela e respeita as áreas seguras. */
+  .tabs {
+    left: max(8px, env(safe-area-inset-left)) !important;
+    right: max(8px, env(safe-area-inset-right)) !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 430px) {
+  main > .screen,
+  main > .screen.active,
+  body.bootstrap-only-ui main > .screen {
+    padding-left: max(8px, env(safe-area-inset-left)) !important;
+    padding-right: max(8px, env(safe-area-inset-right)) !important;
+  }
+}

@@ -23588,3 +23588,506 @@ body:not(.dark) .pdf-preview-body.card-body {
   #abrirValeSenhaModal .modal-footer { padding: 0 17px 18px !important; gap: 8px !important; }
   #abrirValeSenhaModal .modal-footer .btn { font-size: .78rem !important; padding-inline: .35rem !important; }
 }
+
+/* =========================================================
+   TEMA — MODAL DE SENHA E VERSÃO DO SISTEMA
+   O cabeçalho do modal acompanha o cabeçalho do Histórico.
+   ========================================================= */
+#abrirValeSenhaModal .abrir-vale-senha-header {
+  border-bottom: 1px solid rgba(139, 92, 246, .34) !important;
+  background: linear-gradient(105deg, rgba(76, 29, 149, .42), rgba(30, 41, 59, .78)) !important;
+}
+#abrirValeSenhaModal .abrir-vale-senha-icon {
+  border: 0 !important;
+  background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 26px rgba(124, 58, 237, .30) !important;
+}
+#abrirValeSenhaModal .abrir-vale-senha-titulos h2 {
+  color: #f8fafc !important;
+}
+#abrirValeSenhaModal .abrir-vale-senha-titulos p {
+  color: #aeb7c8 !important;
+}
+
+body:not(.dark) #abrirValeSenhaModal .abrir-vale-senha-header {
+  border-bottom-color: #ddd6fe !important;
+  background: linear-gradient(105deg, #f5f3ff, #eef2ff) !important;
+}
+body:not(.dark) #abrirValeSenhaModal .abrir-vale-senha-titulos h2 {
+  color: #111827 !important;
+}
+body:not(.dark) #abrirValeSenhaModal .abrir-vale-senha-titulos p {
+  color: #64748b !important;
+}
+
+/* Versão exibida no menu do usuário */
+#versao_sytem {
+  display: block !important;
+  width: 100% !important;
+  margin: 8px 0 0 !important;
+  padding: 10px 12px 2px !important;
+  border-top: 1px solid rgba(148, 163, 184, .22) !important;
+  color: #64748b !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+  letter-spacing: .03em !important;
+  text-transform: none !important;
+  text-align: center !important;
+}
+body.dark #versao_sytem {
+  border-top-color: rgba(148, 163, 184, .18) !important;
+  color: #aeb7c8 !important;
+}
+
+/* Modal de avisos no celular aberto pelo menu do usuário. */
+.dashboard-user-dropdown .user-notices-menu-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 42px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  text-align: left;
+  transition: background-color .18s ease, color .18s ease;
+}
+
+.dashboard-user-dropdown .user-notices-menu-btn:hover,
+.dashboard-user-dropdown .user-notices-menu-btn:focus-visible {
+  background: rgba(37, 99, 235, .10);
+  color: #1d4ed8;
+  outline: none;
+}
+
+body.dark .dashboard-user-dropdown .user-notices-menu-btn:hover,
+body.dark .dashboard-user-dropdown .user-notices-menu-btn:focus-visible {
+  background: rgba(96, 165, 250, .14);
+  color: #93c5fd;
+}
+
+.avisos-celular-modal {
+  z-index: 2147483600;
+}
+
+.avisos-celular-modal + .modal-backdrop,
+.modal-backdrop.show {
+  z-index: 2147483500;
+}
+
+.avisos-celular-modal .modal-dialog {
+  width: min(94vw, 520px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.avisos-celular-modal .modal-content {
+  overflow: hidden;
+  border-radius: 22px;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.avisos-celular-modal-header {
+  padding: 20px 22px;
+  border: 0;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: #ffffff;
+}
+
+.avisos-celular-modal-header .modal-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.avisos-celular-modal-header p {
+  margin-top: 3px;
+  font-size: .86rem;
+  opacity: .88;
+}
+
+.avisos-celular-modal-header .btn-close {
+  flex: 0 0 auto;
+  filter: invert(1) grayscale(1) brightness(2);
+  opacity: .9;
+}
+
+.avisos-celular-modal-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 46px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .18);
+  border: 1px solid rgba(255, 255, 255, .28);
+  font-size: 1.35rem;
+}
+
+.avisos-celular-description {
+  margin: 0 0 16px;
+  color: #475569;
+}
+
+.avisos-celular-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.avisos-celular-actions .btn {
+  min-height: 46px;
+  font-weight: 700;
+}
+
+body.dark .avisos-celular-modal .modal-content {
+  background: #111827;
+  color: #f8fafc;
+}
+
+body.dark .avisos-celular-modal-header {
+  background: linear-gradient(135deg, #1e3a8a, #312e81);
+}
+
+body.dark .avisos-celular-description {
+  color: #cbd5e1;
+}
+
+body.dark .avisos-celular-modal #pushNotificationStatus {
+  background: #1f2937;
+  color: #e5e7eb;
+  border-color: #374151;
+}
+
+@media (max-width: 575.98px) {
+  .avisos-celular-modal .modal-dialog {
+    width: calc(100vw - 24px);
+    margin: 12px auto;
+  }
+
+  .avisos-celular-modal .modal-content {
+    border-radius: 18px;
+  }
+
+  .avisos-celular-modal-header {
+    padding: 17px 16px;
+  }
+
+  .avisos-celular-modal .modal-body {
+    padding: 18px !important;
+  }
+
+  .avisos-celular-modal .modal-footer {
+    padding: 0 18px 18px !important;
+  }
+}
+
+/* =========================================================
+   MENU DO USUÁRIO — AVISOS NO CELULAR
+   Mesmo padrão visual dos demais itens do menu.
+   ========================================================= */
+#dashboardPushNoticesBtn {
+  position: relative !important;
+  width: 100% !important;
+  min-height: 42px !important;
+  margin: 0 0 8px !important;
+  padding: 0 12px !important;
+  border-radius: 13px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 9px !important;
+  border: 1px solid rgba(124, 58, 237, .17) !important;
+  background: rgba(124, 58, 237, .065) !important;
+  color: #5b21b6 !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+  font-weight: 850 !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+
+
+#dashboardPushNoticesBtn span {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+#dashboardPushNoticesBtn:hover,
+#dashboardPushNoticesBtn:focus-visible {
+  background: rgba(124, 58, 237, .12) !important;
+  color: #5b21b6 !important;
+  border-color: rgba(124, 58, 237, .3) !important;
+  outline: none !important;
+}
+
+body.dark #dashboardPushNoticesBtn {
+  background: rgba(139, 92, 246, .09) !important;
+  border-color: rgba(139, 92, 246, .22) !important;
+  color: #ddd6fe !important;
+}
+
+body.dark #dashboardPushNoticesBtn::before {
+  background: rgba(139, 92, 246, .16) !important;
+  color: #c4b5fd !important;
+}
+
+body.dark #dashboardPushNoticesBtn:hover,
+body.dark #dashboardPushNoticesBtn:focus-visible {
+  background: rgba(139, 92, 246, .16) !important;
+  color: #fff !important;
+}
+
+/* =========================================================
+   MODAL AVISOS NO CELULAR — MESMO ESTILO DA ABA HISTÓRICO
+   Compatível com tema claro e escuro.
+   ========================================================= */
+.avisos-celular-modal .modal-dialog {
+  width: min(94vw, 560px) !important;
+}
+
+.avisos-celular-modal .modal-content {
+  overflow: hidden !important;
+  padding: 0 !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(124, 58, 237, .34) !important;
+  background: linear-gradient(180deg, #111827 0%, #0d1524 100%) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 22px 55px rgba(2, 6, 23, .38) !important;
+}
+
+.avisos-celular-modal-header {
+  min-height: 108px !important;
+  padding: 22px 28px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(139, 92, 246, .34) !important;
+  background: linear-gradient(105deg, rgba(76, 29, 149, .42), rgba(30, 41, 59, .78)) !important;
+  color: #f8fafc !important;
+}
+
+.avisos-celular-modal-icon {
+  width: 52px !important;
+  height: 52px !important;
+  flex: 0 0 52px !important;
+  border-radius: 16px !important;
+  border: 0 !important;
+  background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+  color: #fff !important;
+  font-size: 23px !important;
+  box-shadow: 0 12px 26px rgba(124, 58, 237, .30) !important;
+}
+
+.avisos-celular-modal-header .modal-title {
+  margin: 0 !important;
+  color: #f8fafc !important;
+  font-size: 25px !important;
+  line-height: 1.1 !important;
+  font-weight: 900 !important;
+  letter-spacing: -.35px !important;
+}
+
+.avisos-celular-modal-header p {
+  margin: 7px 0 0 !important;
+  color: #aeb7c8 !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  font-weight: 800 !important;
+  opacity: 1 !important;
+}
+
+.avisos-celular-modal-header .btn-close {
+  width: 38px !important;
+  height: 38px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
+  background-color: rgba(255, 255, 255, .08) !important;
+  filter: invert(1) grayscale(1) brightness(2) !important;
+  opacity: .9 !important;
+}
+
+.avisos-celular-modal .modal-body {
+  padding: 22px 28px 26px !important;
+  background: transparent !important;
+}
+
+.avisos-celular-description {
+  margin: 0 0 16px !important;
+  color: #aeb7c8 !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+}
+
+.avisos-celular-modal #pushNotificationStatus {
+  min-height: 48px !important;
+  margin-bottom: 18px !important;
+  padding: 12px 14px !important;
+  border-radius: 13px !important;
+  border: 1px solid rgba(148, 163, 184, .22) !important;
+  background: #111a2b !important;
+  color: #f8fafc !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  box-shadow: none !important;
+}
+
+.avisos-celular-actions {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px !important;
+}
+
+.avisos-celular-actions .btn {
+  min-height: 48px !important;
+  padding: 0 16px !important;
+  border-radius: 13px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  box-shadow: none !important;
+}
+
+.avisos-celular-actions #activatePushNotifications {
+  grid-column: 1 / -1 !important;
+  border: 0 !important;
+  background: linear-gradient(135deg, #059669, #15803d) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 24px rgba(5, 150, 105, .22) !important;
+}
+
+.avisos-celular-actions #deactivatePushNotifications {
+  border-color: rgba(248, 113, 113, .55) !important;
+  color: #fca5a5 !important;
+  background: rgba(127, 29, 29, .12) !important;
+}
+
+.avisos-celular-actions #testPushNotifications {
+  border-color: rgba(168, 85, 247, .55) !important;
+  color: #c4a7ff !important;
+  background: rgba(88, 28, 135, .18) !important;
+}
+
+.avisos-celular-actions .btn:hover {
+  transform: translateY(-1px) !important;
+  filter: brightness(1.08) !important;
+}
+
+body:not(.dark) .avisos-celular-modal .modal-content {
+  background: #fff !important;
+  color: #111827 !important;
+  border-color: #ddd6fe !important;
+}
+
+body:not(.dark) .avisos-celular-modal-header {
+  background: linear-gradient(105deg, #f5f3ff, #eef2ff) !important;
+  border-bottom-color: #ddd6fe !important;
+}
+
+body:not(.dark) .avisos-celular-modal-header .modal-title {
+  color: #111827 !important;
+}
+
+body:not(.dark) .avisos-celular-modal-header p,
+body:not(.dark) .avisos-celular-description {
+  color: #64748b !important;
+}
+
+body:not(.dark) .avisos-celular-modal-header .btn-close {
+  background-color: rgba(99, 102, 241, .10) !important;
+  filter: none !important;
+}
+
+body:not(.dark) .avisos-celular-modal .modal-body {
+  background: #fff !important;
+}
+
+body:not(.dark) .avisos-celular-modal #pushNotificationStatus {
+  background: #f8fafc !important;
+  color: #111827 !important;
+  border-color: #dbe3ef !important;
+}
+
+body:not(.dark) .avisos-celular-actions #deactivatePushNotifications {
+  color: #b91c1c !important;
+  background: #fff !important;
+  border-color: #fecaca !important;
+}
+
+body:not(.dark) .avisos-celular-actions #testPushNotifications {
+  color: #6d28d9 !important;
+  background: #fff !important;
+  border-color: #c4b5fd !important;
+}
+
+@media (max-width: 575.98px) {
+  .avisos-celular-modal .modal-dialog {
+    width: calc(100vw - 24px) !important;
+    margin: 12px auto !important;
+  }
+
+  .avisos-celular-modal .modal-content {
+    border-radius: 20px !important;
+  }
+
+  .avisos-celular-modal-header {
+    min-height: 92px !important;
+    padding: 17px 18px !important;
+  }
+
+  .avisos-celular-modal-icon {
+    width: 44px !important;
+    height: 44px !important;
+    flex-basis: 44px !important;
+    border-radius: 14px !important;
+    font-size: 20px !important;
+  }
+
+  .avisos-celular-modal-header .modal-title {
+    font-size: 20px !important;
+  }
+
+  .avisos-celular-modal-header p {
+    margin-top: 5px !important;
+    font-size: 10px !important;
+  }
+
+  .avisos-celular-modal-header .btn-close {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .avisos-celular-modal .modal-body {
+    padding: 16px !important;
+  }
+
+  .avisos-celular-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  .avisos-celular-actions #activatePushNotifications,
+  .avisos-celular-actions #deactivatePushNotifications,
+  .avisos-celular-actions #testPushNotifications {
+    grid-column: 1 !important;
+    width: 100% !important;
+  }
+}
+
+
+.user-notices-menu-btn{display:flex!important;align-items:center!important;gap:10px!important;}
+.user-notices-menu-btn span:first-child{display:inline-flex!important;align-items:center;justify-content:center;width:24px;}
+#dashboardLogoutBtn::after{display:none!important;content:none!important;}
+#dashboardLogoutBtn i:last-child{display:none!important;}

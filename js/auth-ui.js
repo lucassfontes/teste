@@ -132,6 +132,7 @@ function setupDashboardUserMenu(profile){
  const dropdown=el('dashboardUserDropdown');
  const logout=el('dashboardLogoutBtn');
  const themeBtn=el('dashboardThemeBtn');
+ const pushNoticesBtn=el('dashboardPushNoticesBtn');
  // Mantém o menu fora do cabeçalho/section para evitar deslocamento por overflow,
  // transformações e grids responsivos do Dashboard.
  if(dropdown && dropdown.parentElement!==document.body) document.body.appendChild(dropdown);
@@ -181,6 +182,17 @@ function setupDashboardUserMenu(profile){
    window.addEventListener('resize',refresh,{passive:true});
    window.addEventListener('orientationchange',refresh,{passive:true});
    window.addEventListener('scroll',refresh,{passive:true,capture:true});
+ }
+ if(pushNoticesBtn && !pushNoticesBtn.dataset.bound){
+   pushNoticesBtn.dataset.bound='1';
+   pushNoticesBtn.addEventListener('click',ev=>{
+     ev.stopPropagation();
+     dropdown?.classList.add('hidden');
+     trigger?.setAttribute('aria-expanded','false');
+     mobile?.setAttribute('aria-expanded','false');
+     const modalEl=el('avisosCelularModal');
+     if(modalEl && window.bootstrap?.Modal) bootstrap.Modal.getOrCreateInstance(modalEl).show();
+   });
  }
  if(themeBtn && !themeBtn.dataset.bound){themeBtn.dataset.bound='1';themeBtn.addEventListener('click',async ev=>{ev.stopPropagation();await toggleUserTheme()})}
  if(logout && !logout.dataset.bound){logout.dataset.bound='1';logout.addEventListener('click',async()=>{await ValleCloud.signOut();location.reload()})}

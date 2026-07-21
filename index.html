@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20260720-abrir-vale-senha-v1">
+  <link rel="stylesheet" href="css/app.css?v=20260721-avisos-historico-v4">
 </head>
 
 <body class="bootstrap-only-ui">
@@ -75,6 +75,7 @@
           </div>
           <button type="button" id="dashboardThemeBtn"
             class="user-theme-menu-btn">Modo escuro</button>
+          <button type="button" id="dashboardPushNoticesBtn" class="user-theme-menu-btn user-notices-menu-btn"><span>🔔</span><span>Avisos no celular</span></button>
           <button type="button" id="dashboardLogoutBtn">Sair</button>
           <p id="versao_sytem"></p>
         </div>
@@ -199,20 +200,6 @@
           </div>
 
           <div class="notification-bootstrap-body">
-            <div class="card border-0 bg-body-tertiary mb-3">
-              <div class="card-body p-3">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                  <i class="bi bi-phone-vibrate fs-4 text-primary"></i>
-                  <div><strong class="d-block">AVISOS NO CELULAR</strong><small class="text-body-secondary">Receba notificações mesmo com o VALLE fechado.</small></div>
-                </div>
-                <div id="pushNotificationStatus" class="alert alert-secondary py-2 px-3 mb-3">Verificando este aparelho…</div>
-                <div class="d-grid d-sm-flex gap-2">
-                  <button id="activatePushNotifications" type="button" class="btn btn-success flex-fill"><i class="bi bi-bell-fill me-1"></i>ATIVAR NOTIFICAÇÕES</button>
-                  <button id="deactivatePushNotifications" type="button" class="btn btn-outline-danger flex-fill d-none"><i class="bi bi-bell-slash me-1"></i>DESATIVAR</button>
-                  <button id="testPushNotifications" type="button" class="btn btn-outline-primary flex-fill"><i class="bi bi-send me-1"></i>TESTAR</button>
-                </div>
-              </div>
-            </div>
             <div id="notificacoesResumo" class="notificacoes-resumo"></div>
             <div class="btn-group w-100 notification-filter-group" role="group" aria-label="Filtros de notificações">
               <button type="button" class="btn btn-outline-primary notif-filter-btn active todos"
@@ -584,6 +571,33 @@
   </div>
 
 
+  <div class="modal fade avisos-celular-modal" id="avisosCelularModal" tabindex="-1"
+    aria-labelledby="avisosCelularModalTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header avisos-celular-modal-header">
+          <div class="d-flex align-items-center gap-3">
+            <span class="avisos-celular-modal-icon" aria-hidden="true"><i class="bi bi-phone-vibrate"></i></span>
+            <div>
+              <h2 class="modal-title" id="avisosCelularModalTitulo">AVISOS NO CELULAR</h2>
+              <p class="mb-0">Receba notificações mesmo com o VALLE fechado.</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="avisos-celular-description">Ative, desative ou teste os avisos deste aparelho.</p>
+          <div id="pushNotificationStatus" class="alert alert-secondary py-2 px-3 mb-3">Verificando este aparelho…</div>
+          <div class="avisos-celular-actions">
+            <button id="activatePushNotifications" type="button" class="btn btn-success"><i class="bi bi-bell-fill me-1"></i>ATIVAR NOTIFICAÇÕES</button>
+            <button id="deactivatePushNotifications" type="button" class="btn btn-outline-danger d-none"><i class="bi bi-bell-slash me-1"></i>DESATIVAR</button>
+            <button id="testPushNotifications" type="button" class="btn btn-outline-primary"><i class="bi bi-send me-1"></i>TESTAR</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal fade abrir-vale-senha-modal" id="abrirValeSenhaModal" tabindex="-1"
     aria-labelledby="abrirValeSenhaTitulo" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered abrir-vale-senha-dialog">
@@ -624,7 +638,7 @@
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js?v=20260720-abrir-vale-senha-v1"></script>
   <script src="js/app.js?v=20260720-abrir-vale-senha-v2"></script>
-  <script src="js/auth-ui.js?v=20260716-alertas-compactos-v2"></script>
+  <script src="js/auth-ui.js?v=20260721-avisos-historico-v4"></script>
   <script src="js/bootstrap-enhance.js?v=20260712-standard-v4"></script>
   <script src="js/push-notifications.js?v=20260718-push-v1"></script>
   <script>
@@ -643,7 +657,7 @@
       window.addEventListener('load', async function () {
         try {
           const registro = await navigator.serviceWorker.register(
-            'service-worker.js?v=20260720-abrir-vale-senha-v1',
+            'service-worker.js?v=20260721-avisos-historico-v4',
             { updateViaCache: 'none' }
           );
 

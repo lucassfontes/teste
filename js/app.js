@@ -1,7 +1,7 @@
 /* VERSAO DO SISTEMA */
 const versao = document.getElementById("versao_sytem")
 
-versao.innerHTML = 'Versão-3.4.13'
+versao.innerHTML = 'Versão-3.5.1'
 /**
  * ARQUIVO PRINCIPAL DO VALLE
  * ------------------------------------------------
@@ -110,7 +110,7 @@ function appAlert(message, options = {}) {
  * Cria a estrutura padrão do banco local quando o sistema é aberto pela primeira vez ou quando os dados são apagados.
  */
 function seed() {
-  return { settings: { theme: 'light', seq: 1, capitalInvestido: 0, percentualJuros50: 50, taxaAtrasoDiario: 0, tipoTaxaAtrasoDiario: 'percentual' }, clientes: [], vales: [] };
+  return { settings: { theme: 'auto', seq: 1, capitalInvestido: 0, percentualJuros50: 50, taxaAtrasoDiario: 0, tipoTaxaAtrasoDiario: 'percentual' }, clientes: [], vales: [] };
 }
 
 /**

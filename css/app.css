@@ -24096,3 +24096,278 @@ body.dark .user-theme-select-wrap select option {
 .user-theme-select-label > span {
   display: none !important;
 }
+
+
+/* =========================================================
+   VALLE v46 — seletor harmonizado com o visual do VALLE
+   ========================================================= */
+.auth-theme-select-wrap,
+.user-theme-select-wrap,
+#dashboardThemeBtn,
+#managementThemeBtn,
+#authThemeBtn {
+  display: none !important;
+}
+
+.valle-theme-picker {
+  position: relative;
+  font-family: inherit;
+  color: var(--text);
+}
+
+/* Botão dentro dos menus: mesmo padrão visual do projeto */
+.valle-theme-trigger {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  margin: 0;
+  border: 1px solid rgba(124, 58, 237, .22) !important;
+  border-radius: 13px;
+  background: rgba(124, 58, 237, .08) !important;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-align: left;
+  text-transform: uppercase !important;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease, transform .16s ease;
+}
+body.dark .valle-theme-trigger {
+  background: rgba(124, 58, 237, .10) !important;
+  border-color: rgba(139, 92, 246, .24) !important;
+  color: #e5e7eb;
+}
+.valle-theme-trigger:hover,
+.valle-theme-trigger:focus-visible {
+  background: rgba(124, 58, 237, .12) !important;
+  border-color: rgba(124, 58, 237, .34) !important;
+  color: #4c1d95;
+  outline: none;
+}
+body.dark .valle-theme-trigger:hover,
+body.dark .valle-theme-trigger:focus-visible {
+  background: rgba(139, 92, 246, .16) !important;
+  border-color: rgba(139, 92, 246, .34) !important;
+  color: #f8fafc;
+}
+.valle-theme-trigger [data-theme-current-icon] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  min-width: 24px;
+  flex: 0 0 24px;
+  font-size: 1rem;
+  line-height: 1;
+  color: #7c3aed;
+}
+body.dark .valle-theme-trigger [data-theme-current-icon] {
+  color: #a78bfa;
+}
+.valle-theme-trigger-label {
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-transform: uppercase !important;
+  white-space: nowrap;
+}
+.valle-theme-chevron {
+  margin-left: auto;
+  font-size: .72rem;
+  opacity: .85;
+  color: #7c3aed;
+  transition: transform .16s ease;
+}
+body.dark .valle-theme-chevron {
+  color: #a78bfa;
+}
+.valle-theme-trigger[aria-expanded="true"] .valle-theme-chevron {
+  transform: rotate(180deg);
+}
+
+/* Menu de opções no mesmo padrão do sistema */
+.valle-theme-popover {
+  padding: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(124, 58, 237, .22);
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, .22), 0 0 0 1px rgba(255, 255, 255, .04) inset;
+  backdrop-filter: none;
+}
+body.dark .valle-theme-popover {
+  background: linear-gradient(180deg, rgba(15, 23, 42, .995), rgba(9, 15, 29, .995));
+  border-color: rgba(139, 92, 246, .30);
+  box-shadow: 0 26px 68px rgba(0, 0, 0, .45), 0 0 0 1px rgba(255,255,255,.03) inset;
+}
+.valle-theme-popover.hidden {
+  display: none !important;
+}
+.valle-theme-option {
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  background: transparent;
+  color: var(--text);
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-transform: uppercase !important;
+  cursor: pointer;
+  transition: background .16s ease, color .16s ease, border-color .16s ease, transform .16s ease;
+}
+body.dark .valle-theme-option {
+  color: #e5e7eb;
+}
+.valle-theme-option + .valle-theme-option {
+  margin-top: 6px;
+}
+.valle-theme-option:hover,
+.valle-theme-option:focus-visible {
+  background: rgba(124, 58, 237, .08);
+  border-color: rgba(124, 58, 237, .16);
+  color: var(--text);
+  outline: none;
+}
+body.dark .valle-theme-option:hover,
+body.dark .valle-theme-option:focus-visible {
+  background: rgba(139, 92, 246, .10);
+  border-color: rgba(139, 92, 246, .18);
+  color: #f8fafc;
+}
+.valle-theme-option.is-selected {
+  background: linear-gradient(135deg, rgba(124, 58, 237, .20), rgba(168, 85, 247, .16));
+  border-color: rgba(124, 58, 237, .34);
+  color: #5b21b6;
+  box-shadow: inset 0 0 0 1px rgba(124, 58, 237, .08);
+}
+body.dark .valle-theme-option.is-selected {
+  background: linear-gradient(135deg, rgba(124, 58, 237, .24), rgba(168, 85, 247, .18));
+  border-color: rgba(168, 85, 247, .34);
+  color: #f8fafc;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+}
+.valle-theme-option-icon {
+  font-size: 1rem;
+  text-align: center;
+  color: #7c3aed;
+}
+body.dark .valle-theme-option-icon {
+  color: #a78bfa;
+}
+.valle-theme-option.is-selected .valle-theme-option-icon {
+  color: #7c3aed;
+}
+body.dark .valle-theme-option.is-selected .valle-theme-option-icon {
+  color: #ddd6fe;
+}
+.valle-theme-check {
+  opacity: 0;
+  justify-self: end;
+  font-size: .98rem;
+  color: #7c3aed;
+}
+body.dark .valle-theme-check {
+  color: #c4b5fd;
+}
+.valle-theme-option.is-selected .valle-theme-check {
+  opacity: 1;
+}
+
+/* Login continua com botão roxo flutuante */
+.valle-theme-picker--login {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right, 0px));
+  bottom: max(18px, env(safe-area-inset-bottom, 0px));
+  z-index: 100001;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.valle-theme-picker--login .valle-theme-trigger {
+  width: auto;
+  min-width: 70px;
+  height: 52px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--p) 34%, transparent) !important;
+  border-radius: 14px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--p) 90%, #6025d8 10%) 0%, color-mix(in srgb, var(--p2) 86%, #8b5cf6 14%) 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 24px rgba(124, 58, 237, .24) !important;
+}
+.valle-theme-picker--login .valle-theme-trigger:hover,
+.valle-theme-picker--login .valle-theme-trigger:focus-visible {
+  filter: brightness(1.05);
+  color: #fff !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--p) 90%, #6025d8 10%) 0%, color-mix(in srgb, var(--p2) 86%, #8b5cf6 14%) 100%) !important;
+}
+.valle-theme-picker--login .valle-theme-trigger [data-theme-current-icon] {
+  color: #fff;
+  width: auto;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+.valle-theme-picker--login .valle-theme-chevron {
+  color: #fff;
+}
+.valle-theme-picker--login .valle-theme-trigger-label {
+  display: none;
+}
+.valle-theme-picker--login .valle-theme-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  width: 204px;
+}
+
+.valle-theme-picker--embedded {
+  width: 100%;
+  margin: 0 0 6px;
+  overflow: visible !important;
+}
+.valle-theme-picker--embedded .valle-theme-popover {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 100%;
+  z-index: 40;
+}
+.dashboard-user-dropdown .valle-theme-picker--embedded,
+.management-user-dropdown .valle-theme-picker--embedded {
+  overflow: visible !important;
+}
+
+@media (max-width: 420px) {
+  .valle-theme-picker--login {
+    right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  }
+  .valle-theme-picker--login .valle-theme-popover {
+    width: 196px;
+  }
+  .valle-theme-picker--login .valle-theme-trigger {
+    min-width: 68px;
+    height: 50px;
+    padding: 0 12px;
+  }
+}

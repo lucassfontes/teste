@@ -45,6 +45,13 @@
   function normalizePhone(v){ return String(v || '').replace(/\D/g,''); }
   function isOnline(){ return navigator.onLine !== false; }
   function clone(value){ try { return JSON.parse(JSON.stringify(value)); } catch (_) { return value; } }
+  function withTimeout(task, milliseconds, message='A conexão demorou mais que o esperado.') {
+    let timer;
+    return Promise.race([
+      Promise.resolve(task),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), milliseconds); })
+    ]).finally(() => clearTimeout(timer));
+  }
 
   async function getCurrentAuth(){
     const c = getClient();
@@ -61,8 +68,8 @@
   async function loadProfile(userId){
     const c = getClient();
     if (!c) throw new Error('Supabase não configurado.');
+    const cached = safeGet(profileCacheKey(userId));
     if (!isOnline()) {
-      const cached = safeGet(profileCacheKey(userId));
       if (!cached) throw new Error('Primeiro acesso deste usuário precisa ser feito com internet.');
       profile = cached;
       sessionProfile = profile.role === 'service'
@@ -71,13 +78,20 @@
       return profile;
     }
     try {
-      const { data, error } = await c.from('profiles').select('*').eq('id', userId).single();
+      const profileRequest = c.from('profiles').select('*').eq('id', userId).single();
+      const { data, error } = cached
+        ? await withTimeout(profileRequest, 1800, 'Usando o perfil salvo neste aparelho.')
+        : await profileRequest;
       if (error) throw error;
       profile = data;
       safeSet(profileCacheKey(userId), data);
       sessionProfile = null;
       if (data.role === 'service' && data.session_user_id) {
-        const res = await c.from('profiles').select('*').eq('id', data.session_user_id).single();
+        const cachedSession = safeGet(sessionProfileCacheKey(data.session_user_id));
+        const sessionRequest = c.from('profiles').select('*').eq('id', data.session_user_id).single();
+        const res = cachedSession
+          ? await withTimeout(sessionRequest, 1400, 'Usando a sessão salva neste aparelho.')
+          : await sessionRequest;
         if (res.error) throw res.error;
         sessionProfile = res.data;
         safeSet(sessionProfileCacheKey(data.session_user_id), res.data);
@@ -87,7 +101,6 @@
       }
       return data;
     } catch (err) {
-      const cached = safeGet(profileCacheKey(userId));
       if (!cached) throw err;
       profile = cached;
       sessionProfile = profile.role === 'service'
@@ -188,26 +201,30 @@
     return sid ? safeGet(workspaceCacheKey(sid)) : null;
   }
 
-  async function loadWorkspaceSnapshot(){
+  async function loadWorkspaceSnapshot(options={}){
     if (!profile || !['session','service'].includes(profile.role)) return null;
     const sid = currentSessionId();
-    if (!isOnline()) return cachedWorkspaceSnapshot();
+    const cached = cachedWorkspaceSnapshot();
+    if (!isOnline() || (options.preferCache && cached)) return cached;
     loadingRemote = true;
     try {
-      const { data, error } = await getClient()
+      const request = getClient()
         .from('session_workspaces')
         .select('data,updated_at,updated_by')
         .eq('session_user_id', sid)
         .maybeSingle();
+      const { data, error } = cached
+        ? await withTimeout(request, 1800, 'Usando os dados salvos neste aparelho.')
+        : await request;
       if (error) throw error;
       if (data) {
         if (data.updated_at) lastSyncedAt = data.updated_at;
         safeSet(workspaceCacheKey(sid), data);
       }
-      return data || cachedWorkspaceSnapshot();
+      return data || cached;
     } catch (err) {
       lastSyncError = err.message || String(err);
-      return cachedWorkspaceSnapshot();
+      return cached;
     } finally { loadingRemote = false; }
   }
 
@@ -377,27 +394,36 @@
     if(error) throw error; safeSet(auditCacheKey(sid),data||[]); return data||[];
   }
 
-  async function listManagedUsers(){
+  async function listManagedUsers(options={}){
     if (!profile) return [];
-    if (!isOnline()) return safeGet(`managed_users_${profile.id}`, []);
+    const cached = safeGet(`managed_users_${profile.id}`, []);
+    if (!isOnline() || (options.preferCache && cached.length)) return cached;
     let q = getClient().from('profiles').select('*').order('created_at', {ascending:false});
     if (profile.role === 'session') q = q.eq('session_user_id', profile.id).eq('role','service');
     else if (profile.role === 'admin') q = q.eq('role','session');
     else return [];
-    const { data, error } = await q;
-    if (error) throw error;
-    safeSet(`managed_users_${profile.id}`, data || []);
-    return data || [];
+    try {
+      const { data, error } = cached.length
+        ? await withTimeout(q, 1800, 'Usando a lista salva neste aparelho.')
+        : await q;
+      if (error) throw error;
+      safeSet(`managed_users_${profile.id}`, data || []);
+      return data || [];
+    } catch (e) { return cached; }
   }
 
-  async function getPermissions(userId){
-    if (!isOnline()) return safeGet(permissionsCacheKey(userId), {});
+  async function getPermissions(userId, options={}){
+    const cached = safeGet(permissionsCacheKey(userId), {});
+    if (!isOnline() || (options.preferCache && Object.keys(cached).length)) return cached;
     try {
-      const { data, error } = await getClient().from('service_permissions').select('*').eq('service_user_id',userId).maybeSingle();
+      const request = getClient().from('service_permissions').select('*').eq('service_user_id',userId).maybeSingle();
+      const { data, error } = Object.keys(cached).length
+        ? await withTimeout(request, 1400, 'Usando as permissões salvas neste aparelho.')
+        : await request;
       if (error) throw error;
       safeSet(permissionsCacheKey(userId), data || {});
       return data || {};
-    } catch (e) { return safeGet(permissionsCacheKey(userId), {}); }
+    } catch (e) { return cached; }
   }
 
   async function savePermissions(userId, permissions){
@@ -408,9 +434,9 @@
     safeSet(permissionsCacheKey(userId), payload);
   }
 
-  async function loadMyPermissions(){
+  async function loadMyPermissions(options={}){
     if (!profile || profile.role !== 'service') return {};
-    return getPermissions(profile.id);
+    return getPermissions(profile.id, options);
   }
 
   installOnlineHandlers();

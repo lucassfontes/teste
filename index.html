@@ -14,23 +14,22 @@
     /* Define o tema do aplicativo antes da primeira pintura.
        Durante o loading, a área inferior permanece escura e estável. */
     (function () {
-      var themeMode = null;
+      var theme = null;
       try {
-        themeMode = localStorage.getItem('valle_theme_active') || localStorage.getItem('valle_theme_guest');
-        if (themeMode !== 'dark' && themeMode !== 'light' && themeMode !== 'auto') {
+        theme = localStorage.getItem('valle_theme_active') || localStorage.getItem('valle_theme_guest');
+        if (theme !== 'dark' && theme !== 'light') {
           for (var i = 0; i < localStorage.length; i++) {
             var key = localStorage.key(i) || '';
             if (key.indexOf('valle_theme_user_') === 0) {
               var saved = localStorage.getItem(key);
-              if (saved === 'dark' || saved === 'light' || saved === 'auto') { themeMode = saved; break; }
+              if (saved === 'dark' || saved === 'light') { theme = saved; break; }
             }
           }
         }
       } catch (_) {}
-      if (themeMode !== 'dark' && themeMode !== 'light' && themeMode !== 'auto') themeMode = 'auto';
-      var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      var theme = themeMode === 'auto' ? (systemDark ? 'dark' : 'light') : themeMode;
-      window.VALLE_THEME_MODE = themeMode;
+      if (theme !== 'dark' && theme !== 'light') {
+        theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
       window.VALLE_PRELOAD_THEME = theme;
       window.VALLE_ACTIVE_THEME = theme;
       // Durante o loading, não permita que o tema do sistema altere o fundo/área inferior.
@@ -281,7 +280,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=39">
+  <link rel="stylesheet" href="css/app.css?v=40">
 </head>
 
 <body class="bootstrap-only-ui" style="background:#070b18">
@@ -309,7 +308,7 @@
     (function () {
       let hidden = false;
       const startedAt = Date.now();
-      const minimumVisibleMs = 12000;
+      const minimumVisibleMs = 650;
 
       function finishLoading() {
         if (hidden) return;
@@ -358,7 +357,11 @@
       window.hideValleLoadingScreen = finishLoading;
       window.addEventListener('valle-app-ready', finishLoading, { once: true });
       window.addEventListener('load', function () {
-        window.setTimeout(finishLoading, 8000);
+        // Segurança: se algum serviço remoto atrasar, não mantém o usuário
+        // preso na tela de carregamento depois que a interface já existe.
+        window.setTimeout(function () {
+          if (document.getElementById('authGate') || document.querySelector('.app')) finishLoading();
+        }, 1800);
       }, { once: true });
     })();
   </script>
@@ -416,14 +419,14 @@
           <div class="dashboard-user-info"><strong id="dashboardUserDropdownName">Usuário</strong>
             <small id="dashboardUserDropdownEmail"></small>
           </div>
-          <label class="user-theme-select-wrap" for="dashboardThemeSelect">
-            <span class="user-theme-select-label"><i class="bi bi-circle-half" aria-hidden="true"></i><span>Tema</span></span>
-            <select id="dashboardThemeSelect" aria-label="Tema do dashboard">
-              <option value="auto">Automático</option>
-              <option value="light">Claro</option>
-              <option value="dark">Escuro</option>
-            </select>
-          </label>
+          <div class="valle-theme-picker valle-theme-picker--embedded" data-theme-picker="dashboard">
+            <button type="button" class="valle-theme-trigger" data-theme-trigger aria-haspopup="true" aria-expanded="false" aria-label="Choose theme"><i class="bi bi-moon-stars-fill" data-theme-current-icon aria-hidden="true"></i><span class="valle-theme-trigger-label" data-theme-current-label>Auto</span><i class="bi bi-chevron-down valle-theme-chevron" aria-hidden="true"></i></button>
+            <div class="valle-theme-popover hidden" data-theme-popover role="radiogroup" aria-label="Select theme">
+              <button type="button" class="valle-theme-option" data-theme-mode="light" role="radio" aria-checked="false"><i class="bi bi-sun-fill valle-theme-option-icon" aria-hidden="true"></i><span>Light</span><i class="bi bi-check-lg valle-theme-check" aria-hidden="true"></i></button>
+              <button type="button" class="valle-theme-option" data-theme-mode="dark" role="radio" aria-checked="false"><i class="bi bi-moon-stars-fill valle-theme-option-icon" aria-hidden="true"></i><span>Dark</span><i class="bi bi-check-lg valle-theme-check" aria-hidden="true"></i></button>
+              <button type="button" class="valle-theme-option" data-theme-mode="auto" role="radio" aria-checked="false"><i class="bi bi-circle-half valle-theme-option-icon" aria-hidden="true"></i><span>Auto</span><i class="bi bi-check-lg valle-theme-check" aria-hidden="true"></i></button>
+            </div>
+          </div>
           <button type="button" id="dashboardPushNoticesBtn" class="user-theme-menu-btn user-notices-menu-btn"><span>🔔</span><span>Avisos no celular</span></button>
           <button type="button" id="dashboardLogoutBtn">Sair</button>
           <p id="versao_sytem"></p>
@@ -981,13 +984,24 @@
 
   <div id="toastContainer" class="app-alert-container" aria-live="polite" aria-atomic="false"></div>
   <!-- JavaScript principal do sistema. Toda a lógica fica em js/app.js. -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Carrega o Supabase sem bloquear a montagem da tela. Em conexão lenta,
+    // o login aparece e a sessão é restaurada assim que a biblioteca terminar.
+    window.VALLE_SUPABASE_READY = new Promise(function (resolve) {
+      var script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      script.async = true;
+      script.onload = function () { resolve(true); };
+      script.onerror = function () { resolve(false); };
+      document.head.appendChild(script);
+    });
+  </script>
   <script src="vendor/bootstrap/bootstrap.bundle.min.js"></script>
   <script src="js/supabase-config.js?v=34"></script>
   <script src="js/supabase-client.js?v=34"></script>
-  <script src="js/app.js?v=39"></script>
-  <script src="js/auth-ui.js?v=39"></script>
-  <script src="js/bootstrap-enhance.js?v=39"></script>
+  <script src="js/app.js?v=40"></script>
+  <script src="js/auth-ui.js?v=40"></script>
+  <script src="js/bootstrap-enhance.js?v=40"></script>
   <script src="js/push-notifications.js?v=34"></script>
   <script>
     (function () {
@@ -1005,7 +1019,7 @@
       window.addEventListener('load', async function () {
         try {
           const registro = await navigator.serviceWorker.register(
-            'service-worker.js?v=39',
+            'service-worker.js?v=40',
             { updateViaCache: 'none' }
           );
 

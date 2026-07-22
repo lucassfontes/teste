@@ -1,5 +1,5 @@
 /** VALLE PWA — atualização automática no celular + suporte offline */
-const CACHE = 'valle-auto-update-20260722-v39-auto-theme';
+const CACHE = 'valle-auto-update-20260722-v46-theme-harmonized';
 const APP_SHELL = [
   './', './index.html', './manifest.json', './favicon.ico',
   './vendor/bootstrap/bootstrap.min.css', './vendor/bootstrap/bootstrap.bundle.min.js',
@@ -8,7 +8,7 @@ const APP_SHELL = [
   './js/supabase-config.js', './js/supabase-client.js',
   './js/pdf.js', './js/whatsapp.js', './js/clientes.js', './js/historico.js',
   './js/dashboard.js', './js/backup.js', './js/storage.js', './js/util.js', './js/push-notifications.js',
-  './icons/icon-valle.png', './icons/favicon-32x32.png', './icons/favicon-16x16.png',
+  './icons/icon-valle.png', './icons/dashboard-icon.png', './icons/favicon-48x48.png', './icons/favicon-32x32.png', './icons/favicon-16x16.png',
   './icons/android-chrome-192x192.png', './icons/android-chrome-512x512.png',
   './icons/apple-touch-icon.png'
 ];
@@ -67,20 +67,21 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Arquivos locais do sistema: rede primeiro para aplicar atualizações imediatamente.
+  // Arquivos locais estáticos: abre imediatamente pelo cache e atualiza em
+  // segundo plano. A troca de versão do Service Worker continua garantindo
+  // que CSS, JavaScript e imagens novos substituam os antigos.
   if (sameOrigin) {
     event.respondWith((async () => {
-      try {
-        const response = await fetch(request, { cache: 'no-store' });
+      const cached = await caches.match(request, { ignoreSearch: true });
+      const network = fetch(request, { cache: 'no-cache' }).then(async response => {
         if (response && response.ok) {
           const cache = await caches.open(CACHE);
           await cache.put(request, response.clone());
         }
         return response;
-      } catch (_) {
-        return (await caches.match(request)) ||
-               new Response('', { status: 504, statusText: 'Offline' });
-      }
+      }).catch(() => null);
+      return cached || (await network) ||
+             new Response('', { status: 504, statusText: 'Offline' });
     })());
     return;
   }

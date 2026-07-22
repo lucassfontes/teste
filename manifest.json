@@ -1,7 +1,7 @@
 {
   "name": "VALLE",
   "short_name": "VALLE",
-  "start_url": "./?valle_v=39",
+  "start_url": "./?valle_v=40",
   "display": "standalone",
   "background_color": "#070b18",
   "theme_color": "#070b18",
@@ -25,7 +25,7 @@
     },
     {
       "src": "icons/icon-valle.png",
-      "sizes": "1024x1024",
+      "sizes": "384x384",
       "type": "image/png"
     }
   ]

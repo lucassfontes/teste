@@ -127,15 +127,20 @@
     syncDropdownVisibility(scope);
   }
 
+  function syncBootstrapTheme(){
+    const loading=document.documentElement.classList.contains('valle-loading-active');
+    document.documentElement.setAttribute('data-bs-theme',loading?'dark':(document.body.classList.contains('dark')?'dark':'light'));
+  }
+
   document.addEventListener('DOMContentLoaded',()=>{
     document.body.classList.add('bootstrap-only-ui');
-    document.documentElement.setAttribute('data-bs-theme',document.body.classList.contains('dark')?'dark':'light');
+    syncBootstrapTheme();
     enhance(document);
 
     const observer=new MutationObserver(mutations=>{
       for(const m of mutations){
         if(m.type==='attributes'&&m.target===document.body&&m.attributeName==='class'){
-          document.documentElement.setAttribute('data-bs-theme',document.body.classList.contains('dark')?'dark':'light');
+          syncBootstrapTheme();
         }
         m.addedNodes.forEach(node=>{
           if(node.nodeType===Node.ELEMENT_NODE) enhance(node);

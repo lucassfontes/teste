@@ -16,7 +16,7 @@ create table if not exists public.profiles (
   active boolean not null default true,
   valid_until date,
   admin_whatsapp text,
-  user_theme text not null default 'light' check (user_theme in ('light','dark')),
+  user_theme text not null default 'auto' check (user_theme in ('auto','light','dark')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint service_requires_session check (role <> 'service' or session_user_id is not null)
@@ -197,11 +197,14 @@ on conflict (session_user_id) do nothing;
 
 -- Tema individual por usuário. Não faz parte do banco compartilhado da sessão.
 alter table public.profiles
-  add column if not exists user_theme text not null default 'light';
+  add column if not exists user_theme text not null default 'auto';
 
-do $$ begin
-  alter table public.profiles add constraint profiles_user_theme_check check (user_theme in ('light','dark'));
-exception when duplicate_object then null; end $$;
+alter table public.profiles
+  alter column user_theme set default 'auto';
+
+alter table public.profiles drop constraint if exists profiles_user_theme_check;
+alter table public.profiles
+  add constraint profiles_user_theme_check check (user_theme in ('auto','light','dark'));
 
 create or replace function public.set_my_theme(new_theme text)
 returns text
@@ -210,7 +213,7 @@ security definer
 set search_path = public
 as $$
 begin
-  if new_theme not in ('light','dark') then
+  if new_theme not in ('auto','light','dark') then
     raise exception 'Tema inválido';
   end if;
   update public.profiles

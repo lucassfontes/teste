@@ -4373,7 +4373,7 @@ body.dark #notificacoes .notif-obs-line p {
   font-weight: 900 !important;
   line-height: 1.35 !important;
   text-align: left !important;
-  z-index: 2147483647 !important;
+  z-index: 2147483000 !important;
   overflow: hidden;
   opacity: 0;
   pointer-events: auto;
@@ -14883,14 +14883,12 @@ main,
   .screen.active,
   .dashboard-pro,
   .management-panel,
-  .management-content,
-  .auth-gate {
+  .management-content {
     width: 100% !important;
     max-width: 100% !important;
   }
 
-  .management-panel,
-  .auth-gate {
+  .management-panel {
     min-height: 100vh !important;
     min-height: 100svh !important;
     min-height: 100dvh !important;
@@ -14941,21 +14939,10 @@ body.dark::before {
   html,
   body,
   .app,
-  .management-panel,
-  .auth-gate {
+  .management-panel {
     min-height: -webkit-fill-available !important;
   }
 
-  body {
-    padding-top: env(safe-area-inset-top) !important;
-    padding-left: env(safe-area-inset-left) !important;
-    padding-right: env(safe-area-inset-right) !important;
-    padding-bottom: env(safe-area-inset-bottom) !important;
-  }
-
-  .app {
-    min-height: calc(var(--valle-vh, 1vh) * 100) !important;
-  }
 }
 
 body.dark .valle-sync-badge {
@@ -15544,7 +15531,11 @@ body>#managementUserDropdown:not(.hidden) {
   }
 
   body {
-    padding-bottom: 154px !important
+    padding-bottom: 0 !important;
+  }
+
+  .screen {
+    padding-bottom: 154px !important;
   }
 
   .screen,
@@ -17886,263 +17877,8 @@ html[data-bs-theme="light"] {
   --bs-border-color: #dce3ec;
 }
 
-body.bootstrap-only-ui {
-  background: var(--bs-body-bg) !important;
-  color: var(--bs-body-color) !important
-}
-
-.bootstrap-only-ui .app,
-.bootstrap-only-ui main,
-.bootstrap-only-ui .screen {
-  background: transparent !important
-}
-
-.bootstrap-only-ui .glass,
-.bootstrap-only-ui .card,
-.bootstrap-only-ui .premium-panel,
-.bootstrap-only-ui .premium-kpi,
-.bootstrap-only-ui .rel-kpi,
-.bootstrap-only-ui .management-card,
-.bootstrap-only-ui .auth-card,
-.bootstrap-only-ui .receive-card,
-.bootstrap-only-ui .partial-payment-card {
-  background: var(--bs-secondary-bg) !important;
-  border: 1px solid var(--bs-border-color) !important;
-  color: var(--bs-body-color) !important;
-  border-radius: var(--bs-border-radius-xl) !important;
-}
-
-.bootstrap-only-ui .card-header {
-  color: inherit !important
-}
-
-.bootstrap-only-ui .topbar,
-.bootstrap-only-ui .tabs {
-  border-radius: var(--bs-border-radius-xl) !important
-}
-
-.bootstrap-only-ui .tabs {
-  padding: .5rem !important;
-  background: var(--bs-secondary-bg) !important;
-  border: 1px solid var(--bs-border-color) !important
-}
-
-.bootstrap-only-ui .tabs .nav-link {
-  min-height: 58px;
-  border-radius: var(--bs-border-radius-lg) !important;
-  color: var(--bs-secondary-color) !important;
-  border: 0 !important
-}
-
-.bootstrap-only-ui .tabs .nav-link.active {
-  background: var(--bs-primary) !important;
-  color: #fff !important;
-  box-shadow: 0 .45rem 1rem rgba(var(--bs-primary-rgb), .25)
-}
-
-.bootstrap-only-ui .tabs .nav-link:hover {
-  background: rgba(var(--bs-primary-rgb), .1) !important;
-  color: var(--bs-primary) !important
-}
-
-.bootstrap-only-ui .tabs .nav-link.active:hover {
-  color: #fff !important
-}
-
-.bootstrap-only-ui .btn {
-  font-weight: 700;
-  letter-spacing: .01em;
-  border-radius: .8rem;
-  min-height: 40px;
-  gap: .4rem
-}
-
-.bootstrap-only-ui .btn-primary {
-  --bs-btn-bg: var(--bs-primary);
-  --bs-btn-border-color: var(--bs-primary);
-  --bs-btn-hover-bg: #6d28d9;
-  --bs-btn-hover-border-color: #6d28d9
-}
-
-.bootstrap-only-ui .btn-warning {
-  color: #111827
-}
-
-.bootstrap-only-ui .btn .bi {
-  margin: 0 !important
-}
-
-.bootstrap-only-ui .bi {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  vertical-align: -.125em
-}
-
-.bootstrap-only-ui .kpi-icon .bi {
-  font-size: 1.25rem
-}
-
-.bootstrap-only-ui h1 .bi,
-.bootstrap-only-ui h2 .bi,
-.bootstrap-only-ui h3 .bi {
-  margin-right: .45rem
-}
-
-.bootstrap-only-ui .form-control,
-.bootstrap-only-ui .form-select {
-  background-color: var(--bs-tertiary-bg) !important;
-  color: var(--bs-body-color) !important;
-  border: 1px solid var(--bs-border-color) !important;
-  border-radius: .8rem !important;
-  min-height: 44px;
-}
-
-.bootstrap-only-ui .form-control::placeholder {
-  color: var(--bs-secondary-color) !important
-}
-
-.bootstrap-only-ui .form-control:focus,
-.bootstrap-only-ui .form-select:focus {
-  border-color: rgba(var(--bs-primary-rgb), .75) !important;
-  box-shadow: 0 0 0 .22rem rgba(var(--bs-primary-rgb), .16) !important;
-}
-
-.bootstrap-only-ui .form-check-input:checked {
-  background-color: var(--bs-primary);
-  border-color: var(--bs-primary)
-}
-
-.bootstrap-only-ui .table {
-  --bs-table-bg: transparent;
-  --bs-table-color: var(--bs-body-color);
-  --bs-table-border-color: var(--bs-border-color)
-}
-
-.bootstrap-only-ui .table-responsive {
-  border: 1px solid var(--bs-border-color);
-  border-radius: var(--bs-border-radius-lg);
-  overflow: hidden
-}
-
-.bootstrap-only-ui .dropdown-menu {
-  background: var(--bs-secondary-bg) !important;
-  color: var(--bs-body-color) !important;
-  border: 1px solid var(--bs-border-color) !important;
-  border-radius: 1rem !important
-}
-
-.bootstrap-only-ui .dropdown-menu:not(.show) {
-  display: none !important
-}
-
-.bootstrap-only-ui .dropdown-menu.show {
-  display: block !important
-}
-
-.bootstrap-only-ui .badge {
-  font-weight: 700
-}
-
-.bootstrap-only-ui .global-message,
-.bootstrap-only-ui #toast {
-  border-radius: 1rem !important;
-  box-shadow: var(--bs-box-shadow-lg) !important
-}
-
-.bootstrap-only-ui .receive-modal,
-.bootstrap-only-ui .partial-payment-modal {
-  --bs-backdrop-bg: #000;
-  --bs-backdrop-opacity: .55
-}
-
-@media (max-width:768px) {
-  .bootstrap-only-ui .tabs {
-    position: sticky;
-    bottom: max(.5rem, env(safe-area-inset-bottom));
-    z-index: 1020;
-    margin: .5rem !important
-  }
-
-  .bootstrap-only-ui .tabs .nav-link {
-    min-height: 54px;
-    font-size: .72rem;
-    padding: .45rem .25rem
-  }
-
-  .bootstrap-only-ui .tabs .bi {
-    font-size: 1.05rem
-  }
-
-  .bootstrap-only-ui .btn {
-    min-height: 38px;
-    font-size: .86rem
-  }
-
-  .bootstrap-only-ui .premium-kpis {
-    gap: .75rem !important
-  }
-}
-
-body.dark {
-  --bg: #080716;
-  --card: #111827;
-  --text: #e5e7eb;
-  --muted: #9ca3af;
-  --line: #312e81;
-  --shadow: 0 18px 45px rgba(0, 0, 0, .36);
-  background: radial-gradient(circle at top, #1e1b4b, transparent 38%), linear-gradient(180deg, #020617, #080716)
-}
-
-body.dark .glass {
-  background: rgba(17, 24, 39, .78)
-}
-
-body.dark input,
-body.dark textarea,
-body.dark select {
-  background: #0b1020;
-  color: var(--text);
-  border-color: #4338ca
-}
-
-body.dark .stat,
-body.dark .btn.light,
-body.dark .row-btns button,
-body.dark .badge {
-  background: #1e1b4b;
-  color: #c4b5fd
-}
-
-body.dark .gradient-card {
-  background: linear-gradient(135deg, #6d28d9, #be185d)
-}
-
-body.dark .metric-card,
-body.dark .dash-panel,
-body.dark .topbar.glass,
-body.dark .tabs.glass {
-  background: rgba(14, 22, 40, .88) !important;
-  border-color: rgba(148, 163, 184, .16) !important;
-  color: #f8fafc !important
-}
-
-body.dark .dash-head p,
-body.dark .panel-title p,
-body.dark .metric-card p,
-body.dark .quick-list small,
-body.dark .donut-legend-pro em {
-  color: #94a3b8 !important
-}
-
-body.dark .metric-card strong,
-body.dark .panel-title h3,
-body.dark .quick-list b,
-body.dark .donut-legend-pro strong,
-body.dark .donut-legend-pro span {
-  color: #fff !important
-}
+/* Tema Bootstrap antigo removido na v30.
+   O visual global agora é controlado exclusivamente pelo tema VALLE abaixo. */
 
 #nome {
   padding-left: 22px;
@@ -22425,7 +22161,7 @@ body.v35-history-modal-open {
     position: fixed !important;
     top: max(10px, env(safe-area-inset-top)) !important;
     right: 10px !important;
-    z-index: 2147483647 !important;
+    z-index: 2147483000 !important;
   }
 }
 
@@ -22433,7 +22169,7 @@ body.v35-history-modal-open {
 /* Alertas globais Bootstrap: compactos, entram de cima para baixo e respeitam notch/câmera. */
 .app-alert-container {
   position: fixed;
-  z-index: 2147483647 !important;
+  z-index: 2147483000 !important;
   top: calc(env(safe-area-inset-top, 0px) + 16px);
   right: 12px;
   width: min(340px, calc(100% - 24px));
@@ -22567,7 +22303,7 @@ body.v35-history-modal-open {
   max-height: none !important;
   margin: 0 !important;
   padding: 14px !important;
-  z-index: 2147483647 !important;
+  z-index: 2147483000 !important;
   isolation: isolate !important;
   overflow: hidden !important;
   display: none !important;
@@ -24114,200 +23850,249 @@ body:not(.dark) .avisos-celular-actions #testPushNotifications {
 }
 
 
-/* Tela inicial de carregamento */
-.valle-loading-screen{
-  position:fixed !important;
-  top:0 !important;
-  right:0 !important;
-  bottom:0 !important;
-  left:0 !important;
-  inset:0 !important;
-  z-index:2147483647;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:100% !important;
-  width:100vw !important;
-  max-width:none !important;
-  height:100% !important;
-  min-height:100vh !important;
-  min-height:100svh !important;
-  height:100dvh !important;
-  margin:0 !important;
-  padding:max(24px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));
-  box-sizing:border-box;
-  overflow:hidden;
-  overscroll-behavior:none;
-  background:linear-gradient(160deg,#090d1c 0%,#111832 58%,#17113a 100%);
-  opacity:1;
-  visibility:visible;
-  transition:opacity .32s ease,visibility .32s ease;
-  transform:translateZ(0);
-}
-.valle-loading-screen.is-hiding{opacity:0;visibility:hidden;pointer-events:none}
-.valle-loading-card{width:min(330px,88vw);text-align:center;color:#fff}
-.valle-loading-logo{width:88px;height:88px;object-fit:contain;filter:drop-shadow(0 14px 30px rgba(130,70,255,.35));animation:valleLoadingPulse 1.55s ease-in-out infinite}
-.valle-loading-card h2{margin:18px 0 4px;font-size:1.65rem;font-weight:900;letter-spacing:.09em}
-.valle-loading-card p{margin:0 0 22px;color:rgba(255,255,255,.72);font-size:.9rem;font-weight:600}
-.valle-loading-progress{height:5px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
-.valle-loading-progress span{display:block;width:44%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#7047ff,#b150ff);animation:valleLoadingBar 1.15s ease-in-out infinite}
-@keyframes valleLoadingPulse{0%,100%{transform:scale(.96);opacity:.82}50%{transform:scale(1.04);opacity:1}}
-@keyframes valleLoadingBar{0%{transform:translateX(-115%)}100%{transform:translateX(330%)}}
-@media (prefers-reduced-motion:reduce){.valle-loading-logo,.valle-loading-progress span{animation:none}.valle-loading-progress span{width:100%}}
-body:not(.dark) .valle-loading-screen{background:linear-gradient(160deg,#f7f5ff 0%,#ece8ff 55%,#e3ddff 100%)}
-body:not(.dark) .valle-loading-card{color:#21183d}
-body:not(.dark) .valle-loading-card p{color:#6d6386}
-body:not(.dark) .valle-loading-progress{background:rgba(69,42,126,.14)}
-
-
-/* Correção de preenchimento total no celular */
-@media (max-width: 768px) {
-  html, body {
-    width: 100% !important;
-    min-width: 100% !important;
-    min-height: 100% !important;
-    overflow-x: hidden !important;
+/* VALLE MOBILE SAFE AREA — regra única do sistema, não interfere no loading. */
+@media (max-width: 780px) {
+  body {
+    padding-top: max(12px, env(safe-area-inset-top, 0px)) !important;
+    padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
   }
 
-  #valleLoadingScreen {
-    width: 100vw !important;
-    min-width: 100vw !important;
-    max-width: 100vw !important;
-    min-height: 100vh !important;
-    min-height: 100svh !important;
-    height: 100dvh !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-  }
-
-  #valleLoadingScreen .valle-loading-card {
-    width: min(340px, calc(100vw - 40px)) !important;
-    max-width: 100% !important;
-    margin: auto !important;
+  html.valle-loading-active body {
+    padding: 0 !important;
   }
 }
+
 
 /* =========================================================
-   VALLE — TELA INTEIRA NO CELULAR
-   Corrige margens externas, largura reduzida e altura incompleta.
+   LOGIN EM TELA INTEIRA — REGRA ÚNICA (v34)
+   Remove cálculos concorrentes de vh/dvh/fill-available apenas
+   da tela de autenticação. O conteúdo respeita notch e gestos,
+   mas o fundo ocupa toda a viewport.
    ========================================================= */
-@media (max-width: 980px) {
-  html {
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
-    min-height: 100% !important;
-    min-height: 100svh !important;
-    background-color: var(--bs-body-bg, var(--bg)) !important;
-    overflow-x: clip !important;
-  }
-
-  body.bootstrap-only-ui,
-  body {
-    position: relative !important;
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
-    min-height: 100vh !important;
-    min-height: 100svh !important;
-    min-height: 100dvh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow-x: clip !important;
-  }
-
-  body::before {
-    inset: 0 !important;
-    width: 100% !important;
-    min-height: 100vh !important;
-    min-height: 100dvh !important;
-  }
-
-  .app,
-  body.bootstrap-only-ui .app {
-    position: relative !important;
-    width: 100% !important;
-    width: 100dvw !important;
-    min-width: 100% !important;
-    max-width: none !important;
-    min-height: 100vh !important;
-    min-height: 100svh !important;
-    min-height: 100dvh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow-x: clip !important;
-  }
-
-  main,
-  body.bootstrap-only-ui main {
-    display: block !important;
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: none !important;
-    min-height: 100vh !important;
-    min-height: 100svh !important;
-    min-height: 100dvh !important;
-    margin: 0 !important;
-    padding: max(8px, env(safe-area-inset-top)) 0 calc(112px + env(safe-area-inset-bottom)) !important;
-    overflow-x: clip !important;
-  }
-
-  main > .screen,
-  main > .screen.active,
-  body.bootstrap-only-ui main > .screen {
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: none !important;
-    min-height: calc(100svh - 120px) !important;
-    margin: 0 !important;
-    padding-left: max(10px, env(safe-area-inset-left)) !important;
-    padding-right: max(10px, env(safe-area-inset-right)) !important;
-  }
-
-  /* Dashboard ocupa a largura total; os próprios componentes controlam o respiro interno. */
-  #dashboard.dashboard-premium,
-  #dashboard.dashboard-pro {
-    width: 100% !important;
-    max-width: none !important;
-  }
-
-  /* Menu inferior acompanha toda a tela e respeita as áreas seguras. */
-  .tabs {
-    left: max(8px, env(safe-area-inset-left)) !important;
-    right: max(8px, env(safe-area-inset-right)) !important;
-    bottom: max(8px, env(safe-area-inset-bottom)) !important;
-    width: auto !important;
-    max-width: none !important;
-    margin: 0 !important;
-  }
-}
-
-@media (max-width: 430px) {
-  main > .screen,
-  main > .screen.active,
-  body.bootstrap-only-ui main > .screen {
-    padding-left: max(8px, env(safe-area-inset-left)) !important;
-    padding-right: max(8px, env(safe-area-inset-right)) !important;
-  }
-}
-
-
-/* VALLE: tela de carregamento cobre também a navegação inferior */
-body.valle-is-loading {
+html.valle-auth-active,
+html.valle-auth-active body {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  margin: 0 !important;
   overflow: hidden !important;
-  touch-action: none !important;
+  overscroll-behavior: none !important;
 }
-body.valle-is-loading .tabs {
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
+
+html.valle-auth-active body {
+  padding: 0 !important;
 }
-body.valle-is-loading #valleLoadingScreen {
+
+html.valle-auth-active:not(.dark),
+html.valle-auth-active:not(.dark) body {
+  background-color: #eef2ff !important;
+}
+
+html.valle-auth-active.dark,
+html.valle-auth-active.dark body {
+  background-color: #040a12 !important;
+}
+
+#authGate.auth-gate {
   position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
   inset: 0 !important;
-  width: 100vw !important;
-  height: 100dvh !important;
-  min-height: 100vh !important;
-  min-height: -webkit-fill-available !important;
-  z-index: 2147483647 !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  z-index: 90000 !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding:
+    max(20px, env(safe-area-inset-top, 0px))
+    max(20px, env(safe-area-inset-right, 0px))
+    max(20px, env(safe-area-inset-bottom, 0px))
+    max(20px, env(safe-area-inset-left, 0px)) !important;
+  transform: none !important;
+  contain: none !important;
+  isolation: isolate !important;
+}
+
+#authGate.auth-gate::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: inherit;
+}
+
+#authGate.auth-gate.hidden {
+  display: none !important;
+}
+
+#authGate .auth-card {
+  position: relative !important;
+  width: min(430px, 100%) !important;
+  max-width: 430px !important;
+  margin: auto !important;
+  flex: 0 0 auto !important;
+}
+
+#authGate > .auth-theme-btn {
+  position: fixed !important;
+  right: max(18px, env(safe-area-inset-right, 0px)) !important;
+  bottom: max(18px, env(safe-area-inset-bottom, 0px)) !important;
+}
+
+
+/* =========================================================
+   VALLE v39 — seletor Claro / Escuro / Automático
+   ========================================================= */
+.user-theme-select-wrap {
+  width: 100% !important;
+  min-height: 52px !important;
+  margin: 0 !important;
+  padding: 6px 8px 6px 10px !important;
+  border: 1px solid rgba(124, 58, 237, .18) !important;
+  border-radius: 13px !important;
+  background: rgba(124, 58, 237, .065) !important;
+  color: #5b21b6 !important;
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+}
+body.dark .user-theme-select-wrap {
+  background: rgba(139, 92, 246, .09) !important;
+  border-color: rgba(139, 92, 246, .24) !important;
+  color: #ddd6fe !important;
+}
+.user-theme-select-label {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+}
+.user-theme-select-label i {
+  width: 24px !important;
+  height: 24px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 8px !important;
+  background: rgba(124, 58, 237, .13) !important;
+  color: #7c3aed !important;
+}
+.user-theme-select-wrap select {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 38px !important;
+  margin: 0 !important;
+  padding: 0 28px 0 9px !important;
+  border: 1px solid rgba(124, 58, 237, .18) !important;
+  border-radius: 10px !important;
+  background-color: rgba(255, 255, 255, .78) !important;
+  color: #4c1d95 !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+body.dark .user-theme-select-wrap select {
+  background-color: rgba(15, 23, 42, .76) !important;
+  border-color: rgba(139, 92, 246, .25) !important;
+  color: #f5f3ff !important;
+}
+
+.auth-theme-select-wrap {
+  position: fixed !important;
+  right: max(18px, env(safe-area-inset-right)) !important;
+  bottom: max(18px, env(safe-area-inset-bottom)) !important;
+  top: auto !important;
+  z-index: 100001 !important;
+  width: 210px !important;
+  height: 50px !important;
+  padding: 5px 7px 5px 12px !important;
+  border-radius: 16px !important;
+  display: grid !important;
+  grid-template-columns: 24px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 7px !important;
+  background: rgba(255, 255, 255, .96) !important;
+  border: 1px solid rgba(124, 58, 237, .24) !important;
+  color: #6d28d9 !important;
+  box-shadow: 0 16px 35px rgba(15, 23, 42, .24) !important;
+  backdrop-filter: blur(14px) !important;
+  box-sizing: border-box !important;
+}
+body.dark .auth-theme-select-wrap {
+  background: rgba(15, 23, 42, .96) !important;
+  border-color: rgba(139, 92, 246, .34) !important;
+  color: #ddd6fe !important;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .42) !important;
+}
+.auth-theme-select-wrap i {
+  font-size: 1.05rem !important;
+  text-align: center !important;
+}
+.auth-theme-select-wrap select {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 38px !important;
+  margin: 0 !important;
+  padding: 0 24px 0 7px !important;
+  border: 0 !important;
+  outline: 0 !important;
+  background-color: transparent !important;
+  color: inherit !important;
+  font-size: 11.5px !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+.auth-theme-select-wrap select option,
+.user-theme-select-wrap select option {
+  background: #ffffff;
+  color: #111827;
+}
+body.dark .auth-theme-select-wrap select option,
+body.dark .user-theme-select-wrap select option {
+  background: #111827;
+  color: #f8fafc;
+}
+
+#dashboardThemeBtn,
+#managementThemeBtn,
+#authThemeBtn {
+  display: none !important;
+}
+.dashboard-user-dropdown,
+.management-user-dropdown {
+  min-height: 0 !important;
+  height: auto !important;
+}
+@media (max-width: 420px) {
+  .auth-theme-select-wrap {
+    width: 198px !important;
+    right: max(12px, env(safe-area-inset-right)) !important;
+    bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Mantém o nome completo "Automático" visível nos menus compactos. */
+.user-theme-select-label > span {
+  display: none !important;
 }

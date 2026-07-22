@@ -29,7 +29,11 @@ function ensureRoleBadge(info,role){
 }
 
 function inject(){
- document.body.insertAdjacentHTML('afterbegin', `
+ document.documentElement.classList.add('valle-auth-active');
+ document.body.classList.add('valle-auth-active');
+ const loadingScreen=document.getElementById('valleLoadingScreen');
+ const mountTarget=loadingScreen||document.body;
+ mountTarget.insertAdjacentHTML(loadingScreen?'afterend':'afterbegin', `
  <section id="authGate" class="auth-gate">
   <div class="auth-card">
    <img src="icons/icon-valle.png" alt="VALLE" class="auth-logo">
@@ -42,12 +46,17 @@ function inject(){
    <small class="auth-setup ${ValleCloud.configured?'hidden':''}">Configure o Supabase em <b>js/supabase-config.js</b>.</small>
   </div>
   
-  <button id="authThemeBtn" class=" position-absolute bottom-0 end-0 mb-2 me-2" type="button" title="Alternar tema" aria-label="Alternar tema">
-    <i class="bi bi-moon-stars-fill"></i>
-  </button>
+  <label class="auth-theme-select-wrap" for="authThemeSelect" title="Escolher tema">
+    <i id="authThemeIcon" class="bi bi-circle-half" aria-hidden="true"></i>
+    <select id="authThemeSelect" aria-label="Tema da tela de login">
+      <option value="auto">Automático</option>
+      <option value="light">Claro</option>
+      <option value="dark">Escuro</option>
+    </select>
+  </label>
  </section>
  <section id="managementPanel" class="management-panel hidden">
-   <header class="management-top"><div><img src="icons/icon-valle.png"><div><h1>VALLE</h1><p id="managementSubtitle"></p></div></div><div class="management-top-actions"><div class="management-user-menu"><button type="button" class="management-user-trigger" id="managementUserTrigger" aria-expanded="false"><span class="management-trigger-avatar">U</span><span class="management-trigger-copy"><strong id="managementUserName">Usuário</strong><small id="managementUserPanelLabel">Painel</small></span><span class="dashboard-user-chevron" aria-hidden="true">⌄</span></button><div class="management-user-dropdown hidden" id="managementUserDropdown"><div class="dashboard-user-info"><strong id="managementUserDropdownName">Usuário</strong><small id="managementUserDropdownEmail"></small></div><button type="button" id="managementThemeBtn" class="user-theme-menu-btn">🌙 Modo escuro</button><button type="button" id="logoutBtn" class="user-logout-menu-btn">↪ Sair</button></div></div></div></header>
+   <header class="management-top"><div><img src="icons/icon-valle.png"><div><h1>VALLE</h1><p id="managementSubtitle"></p></div></div><div class="management-top-actions"><div class="management-user-menu"><button type="button" class="management-user-trigger" id="managementUserTrigger" aria-expanded="false"><span class="management-trigger-avatar">U</span><span class="management-trigger-copy"><strong id="managementUserName">Usuário</strong><small id="managementUserPanelLabel">Painel</small></span><span class="dashboard-user-chevron" aria-hidden="true">⌄</span></button><div class="management-user-dropdown hidden" id="managementUserDropdown"><div class="dashboard-user-info"><strong id="managementUserDropdownName">Usuário</strong><small id="managementUserDropdownEmail"></small></div><label class="user-theme-select-wrap" for="managementThemeSelect"><span class="user-theme-select-label"><i class="bi bi-circle-half" aria-hidden="true"></i><span>Tema</span></span><select id="managementThemeSelect" aria-label="Tema do painel"><option value="auto">Automático</option><option value="light">Claro</option><option value="dark">Escuro</option></select></label><button type="button" id="logoutBtn" class="user-logout-menu-btn">↪ Sair</button></div></div></div></header>
    <main class="management-content"><section class="management-card"><div class="management-head"><div><h2 id="managementTitle">Usuários</h2><p id="managementHelp"></p></div><button id="newManagedUserBtn" class="btn primary">NOVO USUÁRIO</button></div><div id="managedUsers"></div></section><section id="auditPanel" class="management-card hidden"><div class="management-head"><div><h2>Auditoria dos usuários de serviço</h2><p>Histórico permanente de criações, edições, exclusões, pagamentos e quitações.</p></div><button id="refreshAuditBtn" class="btn btn-outline-primary"><i class="bi bi-arrow-clockwise"></i> ATUALIZAR</button></div><div class="audit-filters"><div class="audit-search"><i class="bi bi-search"></i><input id="auditSearch" type="search" placeholder="Buscar usuário, cliente, vale ou ação..."></div><select id="auditUserFilter"><option value="">Todos os usuários</option></select><select id="auditModuleFilter"><option value="">Todos os módulos</option><option>CLIENTES</option><option>VALES</option><option>PAGAMENTOS</option><option>USUARIOS</option><option>SISTEMA</option></select><select id="auditActionFilter"><option value="">Todas as ações</option></select><input id="auditDateFrom" type="date" title="Data inicial"><input id="auditDateTo" type="date" title="Data final"><button id="clearAuditFilters" class="btn btn-outline-secondary">LIMPAR</button></div><div id="auditSummary" class="audit-summary"></div><div id="auditLogs"></div><div class="text-center mt-3"><button id="loadMoreAudit" class="btn btn-outline-primary hidden">CARREGAR MAIS</button></div></section></main>
  </section>
  <div id="userModal" class="user-modal hidden"><div class="user-modal-card"><button class="modal-x" id="closeUserModal">×</button><h2 id="userModalTitle">Novo usuário</h2>
@@ -70,44 +79,84 @@ function inject(){
 
 
 
+const THEME_MODES=['auto','light','dark'];
+const systemThemeMedia=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
+function normalizeThemeMode(theme){return THEME_MODES.includes(theme)?theme:'auto'}
+function resolveThemeMode(theme){const mode=normalizeThemeMode(theme);return mode==='auto'?(systemThemeMedia?.matches?'dark':'light'):mode}
 function themeStorageKey(profile){
  return profile?.id ? `valle_theme_user_${profile.id}` : 'valle_theme_guest';
 }
-function updateThemeButtons(theme){
- const dark=theme==='dark';
- const labels=[['dashboardThemeBtn',dark?'Modo claro':'Modo escuro'],['managementThemeBtn',dark?'Modo claro':'Modo escuro']];
- labels.forEach(([id,text])=>{const b=el(id);if(b)b.textContent=text});
- const a=el('authThemeBtn');
- if(a){a.innerHTML=dark?'<i class="bi bi-sun-fill"></i>':'<i class="bi bi-moon-stars-fill"></i>';a.title=dark?'Mudar para modo claro':'Mudar para modo escuro';a.setAttribute('aria-label',a.title);}
+function readStoredTheme(profile){
+ let value=null;
+ try{value=localStorage.getItem(themeStorageKey(profile))}catch(_){}
+ return THEME_MODES.includes(value)?value:null;
 }
-function applyUserTheme(theme,profile=null){
- const value=theme==='dark'?'dark':'light';
+function updateThemeButtons(themeMode,resolvedTheme=resolveThemeMode(themeMode)){
+ const mode=normalizeThemeMode(themeMode);
+ ['dashboardThemeSelect','managementThemeSelect','authThemeSelect'].forEach(id=>{const x=el(id);if(x&&x.value!==mode)x.value=mode});
+ const icon=el('authThemeIcon');
+ if(icon){
+  icon.className=mode==='auto'?'bi bi-circle-half':(resolvedTheme==='dark'?'bi bi-moon-stars-fill':'bi bi-sun-fill');
+ }
+ document.documentElement.dataset.valleThemeMode=mode;
+}
+function applyResolvedTheme(resolvedTheme){
+ const value=resolvedTheme==='dark'?'dark':'light';
  window.VALLE_ACTIVE_THEME=value;
+ window.VALLE_PENDING_THEME=value;
+ updateThemeButtons(window.VALLE_THEME_MODE||'auto',value);
+
+ // Enquanto o loading está aberto, não altere body/html/theme-color.
+ // Isso evita a troca de cor na área inferior do iPhone.
+ if(document.documentElement.classList.contains('valle-loading-active')) return value;
+
+ window.VALLE_PENDING_THEME=null;
  document.body.classList.toggle('dark',value==='dark');
- try{localStorage.setItem(themeStorageKey(profile),value);localStorage.setItem('valle_theme_active',value)}catch(_){}
- updateThemeButtons(value);
+ document.documentElement.classList.toggle('dark',value==='dark');
+ document.documentElement.setAttribute('data-bs-theme',value);
+ document.documentElement.style.colorScheme=value;
+ const themeMeta=document.querySelector('meta[name="theme-color"]');
+ if(themeMeta)themeMeta.setAttribute('content',value==='dark'?'#070b18':'#f4f2ff');
  if(window.applyTheme) window.applyTheme();
  return value;
 }
+function applyUserTheme(theme,profile=null){
+ const mode=normalizeThemeMode(theme);
+ const resolved=resolveThemeMode(mode);
+ window.VALLE_THEME_MODE=mode;
+ try{localStorage.setItem(themeStorageKey(profile),mode);localStorage.setItem('valle_theme_active',mode)}catch(_){}
+ applyResolvedTheme(resolved);
+ return mode;
+}
 async function persistUserTheme(theme){
  const profile=ValleCloud.profile;
- const value=applyUserTheme(theme,profile);
+ const mode=applyUserTheme(theme,profile);
  if(profile){
-  try{await ValleCloud.setMyTheme(value)}catch(err){console.error('Não foi possível salvar o tema do usuário:',err)}
+  try{await ValleCloud.setMyTheme(mode)}catch(err){console.error('Não foi possível salvar o tema do usuário:',err)}
  }
- return value;
+ return mode;
 }
 async function toggleUserTheme(){
- return persistUserTheme(document.body.classList.contains('dark')?'light':'dark');
+ const current=normalizeThemeMode(window.VALLE_THEME_MODE);
+ const next=current==='auto'?'light':(current==='light'?'dark':'auto');
+ return persistUserTheme(next);
 }
 async function activateProfileTheme(profile){
- let theme=profile?.user_theme;
- if(theme!=='dark'&&theme!=='light'){
-  try{theme=localStorage.getItem(themeStorageKey(profile))}catch(_){}
+ let theme=readStoredTheme(profile);
+ if(!theme&&THEME_MODES.includes(profile?.user_theme))theme=profile.user_theme;
+ if(!theme){
+  try{const active=localStorage.getItem('valle_theme_active');if(THEME_MODES.includes(active))theme=active}catch(_){}
  }
- return applyUserTheme(theme==='dark'?'dark':'light',profile);
+ return applyUserTheme(theme||'auto',profile);
 }
-window.ValleUserTheme={apply:applyUserTheme,toggle:toggleUserTheme,activate:activateProfileTheme};
+function handleSystemThemeChange(){
+ if(normalizeThemeMode(window.VALLE_THEME_MODE)==='auto') applyResolvedTheme(resolveThemeMode('auto'));
+}
+if(systemThemeMedia){
+ if(typeof systemThemeMedia.addEventListener==='function')systemThemeMedia.addEventListener('change',handleSystemThemeChange);
+ else if(typeof systemThemeMedia.addListener==='function')systemThemeMedia.addListener(handleSystemThemeChange);
+}
+window.ValleUserTheme={apply:applyUserTheme,set:persistUserTheme,toggle:toggleUserTheme,activate:activateProfileTheme,resolve:resolveThemeMode,get mode(){return normalizeThemeMode(window.VALLE_THEME_MODE)}};
  document.addEventListener('click',e=>{if(e.target?.id==='refreshAuditBtn')renderAuditLogs()});
  document.addEventListener('input',e=>{if(['auditSearch','auditUserFilter','auditModuleFilter','auditActionFilter','auditDateFrom','auditDateTo'].includes(e.target?.id)){auditPageSize=50;drawAuditLogs()}});
  document.addEventListener('change',e=>{if(['auditUserFilter','auditModuleFilter','auditActionFilter','auditDateFrom','auditDateTo'].includes(e.target?.id)){auditPageSize=50;drawAuditLogs()}});
@@ -131,7 +180,7 @@ function setupDashboardUserMenu(profile){
  if(mobile)mobile.textContent=initial;
  const dropdown=el('dashboardUserDropdown');
  const logout=el('dashboardLogoutBtn');
- const themeBtn=el('dashboardThemeBtn');
+ const themeSelect=el('dashboardThemeSelect');
  const pushNoticesBtn=el('dashboardPushNoticesBtn');
  // Mantém o menu fora do cabeçalho/section para evitar deslocamento por overflow,
  // transformações e grids responsivos do Dashboard.
@@ -194,13 +243,13 @@ function setupDashboardUserMenu(profile){
      if(modalEl && window.bootstrap?.Modal) bootstrap.Modal.getOrCreateInstance(modalEl).show();
    });
  }
- if(themeBtn && !themeBtn.dataset.bound){themeBtn.dataset.bound='1';themeBtn.addEventListener('click',async ev=>{ev.stopPropagation();await toggleUserTheme()})}
+ if(themeSelect && !themeSelect.dataset.bound){themeSelect.dataset.bound='1';themeSelect.addEventListener('change',async ev=>{ev.stopPropagation();await persistUserTheme(ev.target.value)})}
  if(logout && !logout.dataset.bound){logout.dataset.bound='1';logout.addEventListener('click',async()=>{await ValleCloud.signOut();location.reload()})}
- updateThemeButtons(window.VALLE_ACTIVE_THEME||'light');
+ updateThemeButtons(window.VALLE_THEME_MODE||'auto',window.VALLE_ACTIVE_THEME||resolveThemeMode('auto'));
  if(!document.documentElement.dataset.userMenuBound){
    document.documentElement.dataset.userMenuBound='1';
    document.addEventListener('click',ev=>{
-     if(dropdown && !dropdown.classList.contains('hidden') && !ev.target.closest('.dashboard-user-menu') && !ev.target.closest('#dashboardUserMobile')){
+     if(dropdown && !dropdown.classList.contains('hidden') && !dropdown.contains(ev.target) && !ev.target.closest('.dashboard-user-menu') && !ev.target.closest('#dashboardUserMobile')){
        dropdown.classList.add('hidden');
        trigger?.setAttribute('aria-expanded','false');
        mobile?.setAttribute('aria-expanded','false');
@@ -224,7 +273,7 @@ function setupManagementUserMenu(profile){
  const initial=(name.charAt(0)||'U').toUpperCase();
  if(trigger){const avatar=trigger.querySelector('span:first-child');if(avatar)avatar.textContent=initial}
  const dropdown=el('managementUserDropdown');
- const themeBtn=el('managementThemeBtn');
+ const themeSelect=el('managementThemeSelect');
  const logout=el('logoutBtn');
  // Mantém o menu fora dos cards para que sempre abra por cima do conteúdo.
  if(dropdown && dropdown.parentElement!==document.body) document.body.appendChild(dropdown);
@@ -250,9 +299,9 @@ function setupManagementUserMenu(profile){
 };
  const toggle=ev=>{ev?.stopPropagation();if(!dropdown)return;const opening=dropdown.classList.contains('hidden');dropdown.classList.toggle('hidden',!opening);trigger?.setAttribute('aria-expanded',String(opening));if(opening)positionDropdown();};
  if(trigger&&!trigger.dataset.bound){trigger.dataset.bound='1';trigger.addEventListener('click',toggle)}
- if(themeBtn&&!themeBtn.dataset.bound){themeBtn.dataset.bound='1';themeBtn.addEventListener('click',async ev=>{ev.stopPropagation();await toggleUserTheme()})}
+ if(themeSelect&&!themeSelect.dataset.bound){themeSelect.dataset.bound='1';themeSelect.addEventListener('change',async ev=>{ev.stopPropagation();await persistUserTheme(ev.target.value)})}
  if(logout&&!logout.dataset.bound){logout.dataset.bound='1';logout.addEventListener('click',async()=>{await ValleCloud.signOut();location.reload()})}
- updateThemeButtons(window.VALLE_ACTIVE_THEME||'light');
+ updateThemeButtons(window.VALLE_THEME_MODE||'auto',window.VALLE_ACTIVE_THEME||resolveThemeMode('auto'));
  if(!document.documentElement.dataset.managementMenuBound){
   document.documentElement.dataset.managementMenuBound='1';
   document.addEventListener('click',ev=>{if(dropdown&&!dropdown.classList.contains('hidden')&&!trigger?.contains(ev.target)&&!dropdown.contains(ev.target)){dropdown.classList.add('hidden');trigger?.setAttribute('aria-expanded','false')}});window.addEventListener('resize',()=>{if(dropdown&&!dropdown.classList.contains('hidden'))positionDropdown()});window.addEventListener('scroll',()=>{if(dropdown&&!dropdown.classList.contains('hidden'))positionDropdown()},{passive:true});
@@ -312,6 +361,8 @@ function applyServiceFinancialSettings(settings){
 async function showRole(profile){
  const app=document.querySelector('.app'); const gate=el('authGate'); const panel=el('managementPanel');
  gate.classList.add('hidden');
+ document.documentElement.classList.remove('valle-auth-active');
+ document.body.classList.remove('valle-auth-active');
  updateSyncBadge();
  await activateProfileTheme(profile);
  if(profile.role==='service'){
@@ -568,14 +619,11 @@ async function saveManaged(e){
  }catch(err){toast(err.message || 'Erro ao realizar a operação.', 'error')}
 }
 function setupManagementTheme(){
- let theme='light';
- try{theme=localStorage.getItem('valle_theme_guest')||'light'}catch(_){}
+ let theme='auto';
+ try{theme=localStorage.getItem('valle_theme_guest')||localStorage.getItem('valle_theme_active')||'auto'}catch(_){}
  applyUserTheme(theme,null);
- const a=el('authThemeBtn');
- if(a&&!a.dataset.bound){a.dataset.bound='1';a.onclick=()=>{
-  const next=document.body.classList.contains('dark')?'light':'dark';
-  applyUserTheme(next,null);
- }}
+ const select=el('authThemeSelect');
+ if(select&&!select.dataset.bound){select.dataset.bound='1';select.addEventListener('change',ev=>applyUserTheme(ev.target.value,null))}
 }
 
 async function boot(){

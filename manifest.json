@@ -1,10 +1,10 @@
 {
   "name": "VALLE",
   "short_name": "VALLE",
-  "start_url": "./index.html",
+  "start_url": "./?valle_v=39",
   "display": "standalone",
-  "background_color": "#1b0638",
-  "theme_color": "#7c3aed",
+  "background_color": "#070b18",
+  "theme_color": "#070b18",
   "icons": [
     {
       "src": "icons/android-chrome-192x192.png",

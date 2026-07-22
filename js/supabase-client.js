@@ -164,14 +164,22 @@
   }
 
   async function setMyTheme(theme){
-    const value = theme === 'dark' ? 'dark' : 'light';
+    const value = ['auto','light','dark'].includes(theme) ? theme : 'auto';
     if (profile) {
       profile.user_theme = value;
       safeSet(profileCacheKey(profile.id), profile);
     }
     if (!isOnline()) return value;
     const { data, error } = await getClient().rpc('set_my_theme', { new_theme:value });
-    if (error) throw error;
+    if (error) {
+      // Em bancos ainda não atualizados para a v39, o modo automático continua
+      // funcionando neste aparelho e será sincronizado após executar a migração.
+      if (value === 'auto') {
+        console.warn('Atualize o Supabase com TEMA_AUTOMATICO_V39.sql para sincronizar o tema automático entre aparelhos.', error);
+        return value;
+      }
+      throw error;
+    }
     return data || value;
   }
 

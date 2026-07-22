@@ -1,7 +1,7 @@
 /* VERSAO DO SISTEMA */
 const versao = document.getElementById("versao_sytem")
 
-versao.innerHTML = 'Versão-3.4.12'
+versao.innerHTML = 'Versão-3.4.13'
 /**
  * ARQUIVO PRINCIPAL DO VALLE
  * ------------------------------------------------
@@ -520,19 +520,41 @@ function lateFeeLabel(v = null) {
  * Aplica o modo claro ou escuro na tela conforme a configuração salva.
  */
 function applyTheme() {
-  let theme = window.VALLE_ACTIVE_THEME;
-  if (theme !== 'dark' && theme !== 'light') {
-    try { theme = localStorage.getItem('valle_theme_guest'); } catch (_) {}
+  const validModes = ['auto', 'light', 'dark'];
+  let mode = validModes.includes(window.VALLE_THEME_MODE) ? window.VALLE_THEME_MODE : null;
+  if (!mode) {
+    try {
+      const saved = localStorage.getItem('valle_theme_active') || localStorage.getItem('valle_theme_guest');
+      if (validModes.includes(saved)) mode = saved;
+    } catch (_) {}
   }
-  if (theme !== 'dark' && theme !== 'light') theme = db?.settings?.theme === 'dark' ? 'dark' : 'light';
+  if (!mode) mode = validModes.includes(db?.settings?.theme) ? db.settings.theme : 'auto';
+
+  const systemDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+  const theme = mode === 'auto' ? (systemDark ? 'dark' : 'light') : mode;
+  window.VALLE_THEME_MODE = mode;
   window.VALLE_ACTIVE_THEME = theme;
-  try { localStorage.setItem('valle_theme_active', theme); } catch (_) {}
+  window.VALLE_PENDING_THEME = theme;
+  try { localStorage.setItem('valle_theme_active', mode); } catch (_) {}
+
+  const loadingActive = document.documentElement.classList.contains('valle-loading-active');
   const isDark = theme === 'dark';
+  if ($('themeBtn')) $('themeBtn').textContent = mode === 'auto' ? '◐ AUTOMÁTICO' : (isDark ? '☀️ MODO CLARO' : '🌙 MODO ESCURO');
+
+  if (loadingActive) {
+    document.documentElement.style.colorScheme = 'dark';
+    const loadingMeta = document.querySelector('meta[name="theme-color"]');
+    if (loadingMeta) loadingMeta.setAttribute('content', '#070b18');
+    return;
+  }
+
+  window.VALLE_PENDING_THEME = null;
   document.body.classList.toggle('dark', isDark);
   document.documentElement.classList.toggle('dark', isDark);
+  document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
+  document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
   const themeMeta = document.querySelector('meta[name="theme-color"]');
   if (themeMeta) themeMeta.setAttribute('content', isDark ? '#070b18' : '#f4f2ff');
-  if ($('themeBtn')) $('themeBtn').textContent = isDark ? '☀️ MODO CLARO' : '🌙 MODO ESCURO';
 }
 
 
@@ -4246,17 +4268,6 @@ if (document.readyState === 'loading') {
 }
 
 
-// Corrige a altura visual do Safari no iPhone, incluindo barras e safe-area.
-(function valleFixIOSViewport(){
-  const update = () => {
-    const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    document.documentElement.style.setProperty('--valle-vh', `${h * 0.01}px`);
-  };
-  update();
-  window.addEventListener('resize', update, { passive:true });
-  window.addEventListener('orientationchange', () => setTimeout(update, 120), { passive:true });
-  if (window.visualViewport) window.visualViewport.addEventListener('resize', update, { passive:true });
-})();
 
 /* Navegação móvel: transforma a barra em carrossel e centraliza a aba selecionada. */
 (function setupMobileTabsCarousel() {
